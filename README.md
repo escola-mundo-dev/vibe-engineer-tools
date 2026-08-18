@@ -58,7 +58,7 @@ here — file issues and stars upstream:
 | Project | Repo | Installed as | License |
 |---|---|---|---|
 | **GitCraque** | [frederico-kluser/GitCraque](https://github.com/frederico-kluser/GitCraque) | npm package `gitcraque` | MIT |
-| **deep-orchestrator** | [frederico-kluser/deep-orchestrator](https://github.com/frederico-kluser/deep-orchestrator) | Claude Code skill, cloned by installer 04 (v3.3.0) | MIT |
+| **deep-orchestrator** | [frederico-kluser/deep-orchestrator](https://github.com/frederico-kluser/deep-orchestrator) | Claude Code skill, cloned by installer 04 (v3.4.0) | MIT |
 
 ## Contents
 
@@ -184,7 +184,8 @@ ls -l ~/.claude-deepseek/skills/deep-orchestrator   # the skill must be bridged 
 That last line is the one worth checking: if those links are missing, `deepclaude` cannot
 see the skill — see [Stop 4](#stop-4--the-agent-orchestrates-itself-deep-orchestrator). A
 search smoke test lives at
-`~/.local/share/deep-orchestrator/scripts/check-search-credits.sh`.
+`~/.local/share/deep-orchestrator/scripts/check-search-credits.sh`, and the plan gate's
+installer at `~/.local/share/deep-orchestrator/scripts/check-plannotator.sh`.
 
 ---
 
@@ -604,7 +605,7 @@ in an ephemeral `int-ondaN-*` worktree, outside the critical path — removes wo
 and intermediate commits at the end of each wave, and commits everything at the end
 **without asking the user anything**. Asynchronous **testing** and **validation** subwaves
 (`test-ondaN-*`, `val-ondaN-*`) run after each wave.
-<https://github.com/frederico-kluser/deep-orchestrator> · MIT, v3.3.0.
+<https://github.com/frederico-kluser/deep-orchestrator> · MIT, v3.4.0.
 
 ```
 ANALYZE → PLAN → EXECUTE-ONDA (repeat, until the reviser declares convergence) → COMMIT-FINAL
@@ -658,19 +659,23 @@ saved), writes it to `~/.config/aula-dev/brave.key` (mode 600) and exports it fr
 (a marked `BRAVE_API_KEY` block, added idempotently).
 
 The orchestrator checks its search tiers before every wave
-(`scripts/check-search-credits.sh`) and falls back through a three-tier chain:
+(`scripts/check-search-credits.sh`) and falls back through a four-tier chain:
 
 | Tier | Backend | Key needed? |
 |---|---|---|
+| 0 | the harness's own web search (in Claude Code: `WebSearch`/`WebFetch`) | no — no key, no script |
 | 1 | the legacy AI-powered search skill — **no longer installed by this repo**; used automatically only if the machine still has an old installation | no |
 | 2 | Brave Search API | the wizard's key (optional) |
 | 3 | DuckDuckGo keyless (Instant Answer, limited coverage) | no — always works |
 
-**Nothing is a hard blocker.** Without a key the search runs on the keyless tier — degraded
-but operational — and `check-search-credits.sh` exits `1`, which is **expected and fine**
-(it means "keyless only", not "broken"). Important for this repo: installer 04 no longer
-installs the Tier-1 skill, so on a fresh machine the orchestrator searches through tiers 2/3
-— with the Brave key (recommended, via the wizard) or keyless.
+**Nothing is a hard blocker.** Without a Brave key the search degrades to the harness's
+native search (Tier 0) and/or the keyless tier (Tier 3) — degraded but operational — and
+`check-search-credits.sh` exits `1`, which is **expected and fine** (it means "keyless
+only", not "broken"). Two notes on Tier 2: the Brave model has been **metered since
+February 2026** — monthly credits, charged above the quota — so the pre-wave credit check
+is also **financial** protection; and installer 04 no longer installs the Tier-1 skill, so
+on a fresh machine the orchestrator searches through tiers 0/2/3 — with the Brave key
+(recommended, via the wizard) or keyless.
 
 ### Use it
 
@@ -680,12 +685,34 @@ worktree, which switches on contained mode:
 ```bash
 /deep-orchestrator add rate limiting to the Express API, with a configurable window
 /deep-orchestrator max-parallel=4 <task>   # optional prefix: cap parallelism (default 20)
+/deep-orchestrator plan=on <task>          # optional prefix: force the plan-approval gate
+/deep-orchestrator plan=off make a plan and run it   # force full autonomy
 ```
 
 Trigger phrases: *"orquestre isso"*, *"resolva do início ao fim"*, *"não me pergunte nada"*,
 *"toca o barco"*. The agent does not just execute — it organizes itself into waves with
 isolated, named worktrees, tests and validates what it built, and commits when done. Don't
 use it for trivial one-line edits: that is what a plain session is for.
+
+### The plan-approval gate (Plannotator)
+
+Most invocations are fully autonomous, but when you **ask for a plan** the orchestrator
+stops at **Phase 2.5** and sends the plan to the
+[Plannotator](https://github.com/backnotprop/plannotator) in your browser. You **approve or
+annotate** it there; every annotation **regenerates the plan and opens a brand-new
+Plannotator** (new process, new server, new tab) — up to a revision budget of 5 — and
+**no worktree, branch or commit exists before the plan is approved**. If the gate ends
+without approval, nothing was built and the repository is exactly as it was.
+
+How it turns on: the `plan=on` prefix always wins; natural-language triggers like
+*"faça um plano"*, *"planeje"*, *"quero aprovar antes"* turn it on too; `plan=off` forces
+full autonomy. With no prefix and no trigger the default is **off — no browser ever opens
+unless you asked for a plan**. The orchestrator installs the Plannotator itself when it is
+missing (`check-plannotator.sh --install`): just the binary in `~/.local/bin` (minimum
+0.19.1), no `sudo`, no `npm -g`. The verdict comes from the exit code — 0 approved · 10
+annotated · 11 closed · 12 timeout · **13 tool failure** · 14 budget exhausted — the plan title is immutable
+between revisions, the server stays on `127.0.0.1` with external sharing off, and
+reviewing over SSH requires a tunnel.
 
 ### Security
 
@@ -872,6 +899,7 @@ with `core.autocrlf=true` cannot kill the script with `$'\r': command not found`
 | Path | What |
 |---|---|
 | `~/.local/bin/` | `projects-picker`, `deepclaude`, `deepeco` (and npm globals, if the prefix moved) |
+| `~/.local/bin/plannotator` | the plan gate's binary — installed on demand by the skill (`check-plannotator.sh --install`; only the binary, no `sudo`/`npm -g`) |
 | `~/.local/share/projects-picker/` | the TUI and its `node_modules` |
 | `~/.local/share/deep-orchestrator/` | the skill's home — the clone (`SKILL.md`, `scripts/`, `prompts/`, `templates/`) |
 | `~/.local/share/fonts/JetBrainsMonoNerdFont/` | the Nerd Font, on Linux, if it was missing |
@@ -910,7 +938,7 @@ printf '\n[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"\n' >> ~/.bash_profile
 | `deepclaude [claude args]` · `--pro` · `--setup-key` · `--help` | Claude Code on V4 Flash · session on V4 Pro · key setup |
 | `deepeco` · `--short` · `--help` · `/eco` | peak/off-peak status + price table; `--short` is what `deepclaude` prints at launch, `/eco` is the in-session version |
 | `gitcraque [path]` · `--repo` · `--port` · `--no-open` | the Git client, in your browser, on 127.0.0.1 |
-| `/deep-orchestrator <task>` · `max-parallel=N` | autonomous multi-agent orchestration: waves, named worktrees, squash-merge, final commit |
+| `/deep-orchestrator <task>` · `plan=on|off` · `max-parallel=N` | autonomous multi-agent orchestration: waves, named worktrees, squash-merge, final commit — `plan=on` gates the plan through the Plannotator first |
 
 ## deepclaude environment overrides
 
@@ -982,7 +1010,8 @@ the only lever you have.
 | Auto-compact fires far too early | `CLAUDE_CODE_MAX_CONTEXT_TOKENS` is missing; the CLI assumed 200K. |
 | `gitcraque` was not installed | Node < 22.13 (`node:sqlite`). `nvm install 24`, then re-run `./install.sh 04`. |
 | The agent cannot see the deep-orchestrator skill | The bridge into `~/.claude-deepseek/skills/` did not run, or a real directory sits at that path. Re-run `./install.sh 04` and read the warnings. |
-| `check-search-credits.sh` exits 1 — search degraded | No Brave key: only the keyless tier is available. **Expected, exit 1 is fine** — search stays operational, just limited. Re-run `./install.sh 04` and take the key wizard for full search. |
+| `check-search-credits.sh` exits 1 — search degraded | No Brave key: only the harness's native search and the keyless tier are available. **Expected, exit 1 is fine** — search stays operational, just limited. Re-run `./install.sh 04` and take the key wizard for full search. |
+| `plan=on` never opens a browser | The gate only turns on via the `plan=on` prefix or a plan trigger (*"faça um plano"*, *"quero aprovar antes"*); with neither, the default is **off** — nothing opens unless you asked for a plan. |
 | deep-orchestrator does not appear in `deepclaude` | Re-run `./install.sh 04` — bridging into `~/.claude-deepseek/skills/` is part of it. |
 | `npm i -g` fails with EACCES | Do not `sudo`. `npm config set prefix ~/.local` — which is what installer 04 does for you. |
 
