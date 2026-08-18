@@ -137,8 +137,10 @@ else
 fi
 ok "Comando projects-picker publicado em $BIN_DIR"
 
-# O picker lista ~/Projects (ou $PROJECTS_DIR) — garante que a pasta existe.
-mkdir -p "$HOME/Projects"
+# NÃO criamos nenhuma pasta de projetos aqui de propósito. Qual é a sua pasta
+# é uma PERGUNTA (feita mais abaixo, depois que o comandos.sh estiver no lugar),
+# não um palpite — criar um ~/Projects na home de quem instala é exatamente o
+# comportamento que este instalador evita.
 
 # ── comandos.sh (up / qwe / projects) ────────────────────────────────────────
 info "Instalando comandos em $CONF_DIR/comandos.sh…"
@@ -176,6 +178,7 @@ esac
 if { [ "$OS" = "macos" ] || [ "$OS" = "windows-gitbash" ]; } && [ "$login_shell" = "bash" ]; then
   if [ -f "$HOME/.bash_profile" ] && ! grep -qs 'bashrc' "$HOME/.bash_profile"; then
     printf '\n[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"\n' >> "$HOME/.bash_profile"
+    # shellcheck disable=SC2088  # ~ literal numa mensagem para humano
     ok "~/.bash_profile agora carrega o ~/.bashrc (shell de login)"
   fi
 fi
@@ -183,11 +186,16 @@ fi
 # ── Smoke tests ──────────────────────────────────────────────────────────────
 info "Testando…"
 # 1. Picker em modo --list (sem TUI): valida node + deps + código.
-if PROJECTS_DIR="$HOME/Projects" "$BIN_DIR/projects-picker" --list >/dev/null 2>&1; then
+#    Aponta para um diretório TEMPORÁRIO: o teste não pode depender de o usuário
+#    já ter configurado a pasta dele, nem tocar nela.
+_smoke_dir="$(mktemp -d)"
+if PROJECTS_DIR="$_smoke_dir" "$BIN_DIR/projects-picker" --list >/dev/null 2>&1; then
   ok "projects-picker --list respondeu"
 else
+  rmdir "$_smoke_dir" 2>/dev/null || true
   fail "projects-picker falhou no teste — veja o erro acima (node_modules incompleto?)"
 fi
+rmdir "$_smoke_dir" 2>/dev/null || true
 # 2. comandos.sh carrega limpo em bash (sintaxe portátil).
 if bash -c ". '$CONF_DIR/comandos.sh' && type qwe >/dev/null && type up >/dev/null && type projects >/dev/null"; then
   ok "comandos.sh carrega em bash (up/qwe/projects definidos)"
@@ -203,11 +211,35 @@ if command -v zsh >/dev/null 2>&1; then
   fi
 fi
 
+# ── Pasta de projetos: PERGUNTAR, nunca adivinhar ───────────────────────────
+# Reaproveita o _projects_setup do comandos.sh recém-instalado — fonte única:
+# a mesma função que o `projects --setup` chama depois.
+PROJ_CONF="$CONF_DIR/projects.conf"
+echo
+if [ -r "$PROJ_CONF" ]; then
+  _atual="$(sed -n 's/^[[:space:]]*PROJECTS_DIR[[:space:]]*=[[:space:]]*//p' "$PROJ_CONF" \
+            | tr -d '\r' | tail -n 1 | sed "s/^[\"']//; s/[\"']$//")"
+  ok "Pasta de projetos já configurada: $_atual"
+  info "Para trocar depois: projects --setup"
+elif [ -t 0 ]; then
+  info "Falta um passo: dizer QUAL pasta guarda os seus projetos."
+  # `|| warn`: sob set -e, um setup abortado (Ctrl+C, 3 caminhos inválidos) não
+  # pode derrubar o instalador depois de tudo já ter sido instalado.
+  if bash -c ". '$CONF_DIR/comandos.sh' && _projects_setup"; then
+    :
+  else
+    warn "Pasta de projetos não configurada — rode depois: projects --setup"
+  fi
+else
+  warn "Sessão não interativa — configure a pasta depois com: projects --setup"
+fi
+
 echo
 ok "Instalação concluída."
 echo
 echo "Próximo passo (1 min): abra um terminal NOVO (ou rode: source ~/.${login_shell:-bash}rc) e teste:"
-echo "  1. projects        → seletor TUI dos projetos em ~/Projects"
+echo "  1. projects        → seletor TUI da SUA pasta de projetos"
+echo "                       (trocar a pasta: projects --setup)"
 echo "  2. cd <um repo git> && qwe teste-aula   → cria worktree e entra"
 echo "  3. up              → volta pro repo principal"
 echo "Limpeza do teste: git worktree remove ../<repo>.worktrees/teste-aula && git branch -D teste-aula"

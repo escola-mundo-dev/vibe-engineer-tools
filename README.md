@@ -314,15 +314,33 @@ settings. Nothing is ever deleted.
 
 ```bash
 ./install.sh 01
-# then open a NEW terminal — `projects` is a shell function, and the installer
-# runs in a child process that cannot define functions in your current shell
+# the installer asks for YOUR projects folder on its way out, then open a NEW
+# terminal — `projects` is a shell function, and the installer runs in a child
+# process that cannot define functions in your current shell
 projects
 ```
 
-A TUI (Ink 5.2.1 + React 18.3.1) lists the directories in `~/Projects`, newest-modified
+**The folder is asked for, never assumed.** There is no default and nothing is created in
+your home: the installer prompts for the absolute path of the directory where *you* keep
+your repositories, and tells you how to find it if you don't know it by heart — run `pwd`
+inside the folder from another terminal, or drag the folder onto the terminal window. (On
+Git Bash use the `/c/Users/you/...` form `pwd` prints, not `C:\Users\you\...`.) Answer
+wrong, or move your repos later, and one command fixes it:
+
+```bash
+projects --setup     # (re)configure the folder, any time
+projects --help
+```
+
+The answer goes to **`~/.config/aula-dev/projects.conf`** — a *separate* file from
+`comandos.sh` on purpose, because the installer overwrites `comandos.sh` on every run and
+your configuration must survive that. Resolution order is `$PROJECTS_DIR` (a one-off
+override: `PROJECTS_DIR=/srv/code projects`) then the config file; with neither, `projects`
+runs the setup rather than inventing a directory.
+
+A TUI (Ink 5.2.1 + React 18.3.1) then lists the directories in that folder, newest-modified
 first with a relative-time hint. Type to filter, `↑↓` through a 10-item sliding window,
-`Enter` to open, `Esc` or `Ctrl+C` to cancel without moving. Enter on an empty filter result
-falls back to `~/Projects` itself. Projects elsewhere? `export PROJECTS_DIR=/srv/code`.
+`Enter` to open, `Esc` or `Ctrl+C` to cancel without moving.
 
 **The architectural detail worth stealing.** A TUI cannot `cd` your shell — a child process
 cannot change its parent's directory. So the picker **renders the interface to stderr and
@@ -370,7 +388,7 @@ smoke test uses, and what you should use when scripting.
 The agent is about to rewrite files. Not on your branch.
 
 ```bash
-cd ~/Projects/my-api
+cd ~/dev/my-api
 qwe add-rate-limit
 ```
 
@@ -669,7 +687,7 @@ Nothing is a hard blocker; the degrade path is the design:
 ### Configure: per project (do not skip this)
 
 ```bash
-cd ~/Projects/my-api
+cd ~/dev/my-api
 surf-research-skill project-config
 ```
 
@@ -766,7 +784,7 @@ never a shell string — and serves a React 19 + Vite SPA to your browser. The b
 
 ```bash
 npm install -g gitcraque
-cd ~/Projects/my-api && gitcraque
+cd ~/dev/my-api && gitcraque
 npx gitcraque                       # or no install at all
 ```
 
@@ -936,7 +954,7 @@ with `core.autocrlf=true` cannot kill the script with `$'\r': command not found`
 | `~/.claude-deepseek/skills/` | the surf skills, bridged in for `deepclaude` |
 | `~/.config/surf/keys.json` | surf-skill's keys (mode 600) |
 | `~/.agents/skills/`, `~/.claude/skills/`, `~/.codex/skills/`, `~/.pi/agent/skills/` | surf-skill's own postinstall links — four directories covering five harnesses (`~/.agents/skills` serves both OpenCode and GitHub Copilot CLI) |
-| `~/Projects/` | created if absent (that is where `projects` looks) |
+| `~/.config/aula-dev/projects.conf` | **your** projects folder — written by `projects --setup`; the installer never overwrites it, and no projects folder is ever created for you |
 | `~/.zshrc` / `~/.bashrc` | one marked block per concern, added idempotently |
 
 The rc blocks are delimited by `# >>> aula-dev (...) >>>` / `# <<< aula-dev (...) <<<` —
@@ -956,7 +974,7 @@ printf '\n[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"\n' >> ~/.bash_profile
 
 | Command | What it does |
 |---|---|
-| `projects` (`projects-picker --list`) | TUI picker over `~/Projects` / `$PROJECTS_DIR`, then `cd` |
+| `projects` · `projects --setup` · `projects --help` | TUI picker over your configured folder, then `cd`; `--setup` (re)configures which folder that is |
 | `qwe [branch] [-a deepclaude\|claude]` | sibling worktree, enter it, optionally launch an agent |
 | `up` | worktree → main repo root; subdir → repo root; otherwise `cd ..` |
 | `deepclaude [claude args]` · `--pro` · `--setup-key` · `--help` | Claude Code on V4 Flash · session on V4 Pro · key setup |

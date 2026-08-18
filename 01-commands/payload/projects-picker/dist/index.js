@@ -6,7 +6,34 @@ import { Box, Text, render, useInput } from "ink";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
-var ROOT = process.env.PROJECTS_DIR || path.join(process.env.HOME, "Projects");
+// A pasta de projetos e CONFIGURACAO do usuario, nunca um palpite: nao existe
+// fallback para ~/Projects (criar/listar pasta na home de quem instalou e o
+// bug que isso corrige). Precedencia: $PROJECTS_DIR > projects.conf.
+// O conf e lido por regex, nao por eval: e arquivo do usuario, nao script.
+function readConfDir() {
+  const conf = process.env.PROJECTS_CONF ||
+    path.join(process.env.HOME, ".config", "aula-dev", "projects.conf");
+  let txt;
+  try {
+    txt = fs.readFileSync(conf, "utf8");
+  } catch {
+    return null;
+  }
+  let found = null;
+  for (const line of txt.split(/\r?\n/)) {
+    const m = line.match(/^\s*PROJECTS_DIR\s*=\s*(.*)$/);
+    if (m) found = m[1].trim().replace(/^["']|["']$/g, "");
+  }
+  return found || null;
+}
+var ROOT = process.env.PROJECTS_DIR || readConfDir();
+if (!ROOT) {
+  console.error(
+    "projects-picker: nenhuma pasta de projetos configurada.\n" +
+    "  Rode:  projects --setup     (ou: PROJECTS_DIR=/caminho projects-picker)"
+  );
+  process.exit(2);
+}
 var WINDOW = 10;
 function listProjects(dir) {
   let entries;
@@ -47,7 +74,9 @@ function clamp(v, lo, hi) {
   return Math.min(Math.max(v, lo), hi);
 }
 var projects = listProjects(ROOT);
-var HOME_NAME = ROOT === path.join(process.env.HOME, "Projects") ? "~" : ROOT;
+var HOME_NAME = process.env.HOME && ROOT.startsWith(process.env.HOME + path.sep)
+  ? "~" + ROOT.slice(process.env.HOME.length)
+  : ROOT;
 if (process.argv.includes("--list")) {
   for (const p of projects) console.log(p.name);
   process.exit(0);

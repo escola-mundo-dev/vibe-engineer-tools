@@ -5,9 +5,38 @@ working on it in an isolated branch".
 
 | Command | What it does |
 |---|---|
-| `projects` | TUI picker (Ink/React) for the directories in `~/Projects` — newest first, type to filter, Enter opens, Esc cancels. Projects live elsewhere? `export PROJECTS_DIR=/path`. |
+| `projects` | TUI picker (Ink/React) over **your** projects folder — newest first, type to filter, Enter opens, Esc cancels. The folder is asked for at install time and stored; change it any time with `projects --setup`. |
 | `qwe [branch] [-a deepclaude\|claude]` | Creates a git worktree of the current repo at `<repo>.worktrees/<branch>`, cds into it, and — **only with `-a`** — launches the agent there. No branch given: it asks (Enter = `ai-task-<epoch>`). |
 | `up` | From inside a worktree, back to the **main** repo root. From a subdirectory, back to the repo root. Outside git, up one level. |
+
+## Your projects folder is a question, not a guess
+
+There is **no default folder**. The installer asks for the absolute path of the directory
+where *you* keep your repositories, and nothing is created in your home behind your back.
+
+```bash
+projects --setup     # (re)configure the folder, any time
+projects --help
+```
+
+The prompt tells you how to find the path if you don't know it by heart — `pwd` inside the
+folder from another terminal, or dragging the folder onto the terminal window (on Git Bash,
+use the `/c/Users/you/...` form that `pwd` prints, not `C:\Users\you\...`). It accepts a
+leading `~`, strips the quotes drag-and-drop leaves behind, offers to create the folder if it
+does not exist yet, and stores the resolved physical path. Get it wrong, or change your mind
+later, and `projects --setup` fixes it — the installer says so on its way out.
+
+The answer lands in **`~/.config/aula-dev/projects.conf`**, deliberately a *separate* file
+from `comandos.sh`: the installer overwrites `comandos.sh` on every run, and your
+configuration must not die with it.
+
+```ini
+PROJECTS_DIR="/home/you/dev"
+```
+
+Resolution order is `$PROJECTS_DIR` (a one-off override: `PROJECTS_DIR=/tmp/x projects`)
+then the config file. With neither, `projects` runs the setup instead of inventing a
+directory, and `projects-picker` on its own exits `2` with the same instruction.
 
 ## Install
 
@@ -66,13 +95,14 @@ a subdirectory. Both sides are normalized through `cd` + `pwd -P`, because Git B
 |---|---|
 | `~/.local/share/projects-picker/` | the picker app + `node_modules` (exact lockfile deps) |
 | `~/.local/bin/projects-picker` | symlink (Linux/macOS) or wrapper script (Git Bash) |
-| `~/.config/aula-dev/comandos.sh` | the three functions — portable across zsh **and** bash |
+| `~/.config/aula-dev/comandos.sh` | the three functions — portable across zsh **and** bash (**overwritten on every install**) |
+| `~/.config/aula-dev/projects.conf` | your projects folder — written by `projects --setup`, never overwritten by the installer |
 | `~/.zshrc` / `~/.bashrc` | one marked block: `>>> aula-dev … <<<` |
 
 ## Uninstall
 
 ```bash
 rm -rf ~/.local/share/projects-picker ~/.local/bin/projects-picker \
-       ~/.config/aula-dev/comandos.sh
+       ~/.config/aula-dev/comandos.sh ~/.config/aula-dev/projects.conf
 # then delete the ">>> aula-dev" block from ~/.zshrc / ~/.bashrc
 ```
