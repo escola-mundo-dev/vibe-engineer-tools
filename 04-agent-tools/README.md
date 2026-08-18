@@ -52,7 +52,7 @@ So this installer clones the skill into `~/.local/share/deep-orchestrator/` (set
 `DEEP_ORCHESTRATOR_SRC` before running to point at a local path or another URL instead) and
 bridges it — `SKILL.md` plus `scripts/`, `prompts/` and `templates/` — into
 `~/.claude/skills/deep-orchestrator` **and** `~/.claude-deepseek/skills/deep-orchestrator`
-(a plain copy on Windows/MSYS, where symlinks need a privilege you may not have). If a real
+(a junction on Windows — no admin needed — falling back to a plain copy when junctions are not available). If a real
 directory already sits at one of those names, it is left alone — your copy wins over ours.
 
 Set `DEEPCLAUDE_DIR` before running if your `deepclaude` config lives somewhere else; it is

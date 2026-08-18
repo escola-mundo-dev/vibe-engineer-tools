@@ -153,7 +153,7 @@ if [ "$GITCRAQUE_OK" = "1" ]; then
   npm install -g gitcraque --no-audit --no-fund
   ok "GitCraque instalado: $(gitcraque --version 2>/dev/null || npm view gitcraque version)"
 else
-  warn "GitCraque pulado (Node < 22.13)."
+  warn "GitCraque pulado (Node ausente, < 22.13 ou npm ausente)."
 fi
 
 # ── 4. Limpeza de resíduos da ponte antiga de skills ────────────────────────
