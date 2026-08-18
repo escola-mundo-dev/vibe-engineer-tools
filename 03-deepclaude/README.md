@@ -31,6 +31,8 @@ fallback).
 | `deepclaude --pro` | the whole session on V4 Pro — heavy codegen and refactors |
 | `deepclaude --setup-key` | ask for, validate, and store the key (globally) |
 | `deepeco` | banner + status + a table of windows and prices in **your** timezone |
+| `deepeco --short` | status + table without the banner — this is what `deepclaude` prints on launch |
+| `deepeco --help` | usage, the current regime in one paragraph, and where the config lives |
 | `/eco` | the same, from inside a `deepclaude` session |
 | `/model fable` ⇄ `/model sonnet` | V4 Pro ⇄ V4 Flash without restarting |
 

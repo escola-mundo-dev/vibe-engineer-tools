@@ -112,6 +112,38 @@ function Show-StatusCurto {
 }
 
 # ── saída ────────────────────────────────────────────────────────────────────
+# Paridade com o deepeco.sh (e com `deepclaude --help`): --help responde, e
+# flag desconhecida ERRA em vez de cair no caminho normal imprimindo a tabela.
+if ($args.Count -gt 0 -and ($args[0] -eq '-h' -or $args[0] -eq '--help')) {
+    Write-Host @"
+deepeco — a API DeepSeek está em horário de economia ou de pico agora?
+
+  deepeco            banner MUNDO DEV + status + tabela de horários e tarifas
+  deepeco --short    só status + tabela (é o que o ``deepclaude`` imprime ao subir)
+  deepeco --help     esta ajuda
+
+Dentro de uma sessão do deepclaude: /eco
+
+Regime (desde 16/08/2026 16:00 UTC): os picos custam 2x e todo o resto do dia
+(17h) é economia — metade do preço de pico, para todos os modelos. As janelas
+são definidas em UTC pelo relógio do SERVIDOR da API; este comando converte
+para o SEU fuso automaticamente.
+
+Janela, tarifas e vigência vivem em:
+  $confPath
+Quando a DeepSeek mudar a política, edite esse arquivo — não este script.
+
+Ambiente:
+  DEEPECO_CONF        caminho do conf (default: ~\.config\aula-dev\deepeco.conf)
+  MUNDO_DEV_BANNER=0  desliga o banner
+"@
+    exit 0
+}
+if ($args.Count -gt 0 -and $args[0] -ne '--short') {
+    Write-Host "deepeco: flag desconhecida '$($args[0])' (veja: deepeco --help)" -ForegroundColor Red
+    exit 2
+}
+
 if ($args.Count -gt 0 -and $args[0] -eq '--short') {
     if ($conf.ECO_ATIVO -ne '1') {
         Write-Host '[eco] deepeco: sem variação de preço por horário no momento (preço fixo).'

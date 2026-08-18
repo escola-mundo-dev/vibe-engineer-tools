@@ -978,7 +978,7 @@ printf '\n[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"\n' >> ~/.bash_profile
 | `qwe [branch] [-a deepclaude\|claude]` | sibling worktree, enter it, optionally launch an agent |
 | `up` | worktree → main repo root; subdir → repo root; otherwise `cd ..` |
 | `deepclaude [claude args]` · `--pro` · `--setup-key` · `--help` | Claude Code on V4 Flash · session on V4 Pro · key setup |
-| `deepeco` / `deepeco --short` / `/eco` | peak/off-peak status + price table |
+| `deepeco` · `--short` · `--help` · `/eco` | peak/off-peak status + price table; `--short` is what `deepclaude` prints at launch, `/eco` is the in-session version |
 | `gitcraque [path]` · `--repo` · `--port` · `--no-open` | the Git client, in your browser, on 127.0.0.1 |
 | `surf-free-skill "q"` | keyless web search |
 | `surf-search-normal "q" --task … --goal …` | one research round, cited |

@@ -130,6 +130,40 @@ _status_curto() {
 }
 
 # ── Saída ────────────────────────────────────────────────────────────────────
+# Paridade com `deepclaude --help` e `projects --help`: toda ferramenta da aula
+# responde --help. E flag desconhecida ERRA — antes, `deepeco --helpp` caía no
+# caminho normal e imprimia a tabela como se a flag existisse.
+case "${1:-}" in
+  -h|--help)
+    cat <<EOF
+deepeco — a API DeepSeek está em horário de economia ou de pico agora?
+
+  deepeco            banner MUNDO DEV + status + tabela de horários e tarifas
+  deepeco --short    só status + tabela (é o que o \`deepclaude\` imprime ao subir)
+  deepeco --help     esta ajuda
+
+Dentro de uma sessão do deepclaude: /eco
+
+Regime (desde 16/08/2026 16:00 UTC): os picos custam 2× e todo o resto do dia
+(17h) é economia — metade do preço de pico, para todos os modelos. As janelas
+são definidas em UTC pelo relógio do SERVIDOR da API; este comando converte
+para o SEU fuso automaticamente.
+
+Janela, tarifas e vigência vivem em:
+  ${CONF}
+Quando a DeepSeek mudar a política, edite esse arquivo — não este script.
+
+Ambiente:
+  DEEPECO_CONF        caminho do conf (default: ~/.config/aula-dev/deepeco.conf)
+  MUNDO_DEV_BANNER=0  desliga o banner
+EOF
+    exit 0 ;;
+  ""|--short) : ;;
+  *)
+    echo "deepeco: flag desconhecida '$1' (veja: deepeco --help)" >&2
+    exit 2 ;;
+esac
+
 if [ "${1:-}" = "--short" ]; then
   if [ "$ECO_ATIVO" != "1" ]; then
     echo "💰 deepeco: sem variação de preço por horário no momento (preço fixo)."
