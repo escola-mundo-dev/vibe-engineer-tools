@@ -135,4 +135,4 @@ when DeepSeek changes the policy you edit that file, not the scripts.
 
 Because this account uses its own `CLAUDE_CONFIG_DIR`, its personal skills live in
 `~/.claude-deepseek/skills/` — which is why [`04-agent-tools`](../04-agent-tools/) has to
-bridge the `surf-*` skills into it explicitly.
+bridge the `deep-orchestrator` skill into it explicitly.

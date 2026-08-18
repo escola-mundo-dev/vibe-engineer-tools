@@ -1,14 +1,15 @@
-# 04-agent-tools — GitCraque + surf-skill
+# 04-agent-tools — GitCraque + deep-orchestrator
 
-Installs the two tools that sit on either side of an agent session: one to **read** the
-history it produced, one to give it **research it can cite**.
+Installs the two pieces that sit on either side of an agent session: one to **read** the
+history it produced, one to **organize** the session itself.
 
-Both are separate open-source projects by the same author, installed here from npm:
+Both are separate open-source projects by the same author — one installed from npm, one
+cloned as a Claude Code skill:
 
-| Tool | npm | Repository |
+| Tool | Installed as | Repository |
 |---|---|---|
-| **GitCraque** | [`gitcraque`](https://www.npmjs.com/package/gitcraque) | <https://github.com/frederico-kluser/GitCraque> |
-| **surf-skill** | [`surf-skill`](https://www.npmjs.com/package/surf-skill) | <https://github.com/frederico-kluser/surf-skill> |
+| **GitCraque** | npm package [`gitcraque`](https://www.npmjs.com/package/gitcraque) | <https://github.com/frederico-kluser/GitCraque> |
+| **deep-orchestrator** | Claude Code skill, cloned and bridged | <https://github.com/frederico-kluser/deep-orchestrator> (v3.3.0, MIT) |
 
 ## Install
 
@@ -17,15 +18,16 @@ Both are separate open-source projects by the same author, installed here from n
 | Linux / macOS / Windows (Git Bash) | `./install.sh` |
 | Windows (native PowerShell) | `powershell -ExecutionPolicy Bypass -File .\install.ps1` |
 
-Run [`01-commands`](../01-commands/) first — it is what guarantees Node.js is present.
+Run [`01-commands`](../01-commands/) first if you want GitCraque — it is what guarantees
+Node.js is present. **deep-orchestrator itself needs no Node at all.**
 
 > The installer's own terminal output is in Portuguese.
 
-### Two different Node floors, checked separately
+### One Node floor, checked separately
 
 | Tool | Requires | If your Node is older |
 |---|---|---|
-| `surf-skill` | Node ≥ 18 | the installer stops and tells you to run `01-commands` |
+| `deep-orchestrator` | **none** | installs regardless — no Node, no problem |
 | `gitcraque` | **Node ≥ 22.13** | GitCraque is **skipped with a warning**; everything else still installs |
 
 GitCraque's floor is not arbitrary: it uses `node:sqlite`, which only drops the
@@ -41,21 +43,17 @@ land next to the ones the other installers publish — a directory already on yo
 
 ### The part that is easy to get wrong
 
-`surf-skill`'s own postinstall symlinks its three skills into the four skill directories it
-knows about:
+`deepclaude` runs Claude Code with `CLAUDE_CONFIG_DIR=~/.claude-deepseek`, and personal
+skills are read from `<CLAUDE_CONFIG_DIR>/skills`. The main harness reads them from
+`~/.claude/skills/`. **Without a bridge into both, the skill is installed on disk and
+invisible in the agent you actually use.**
 
-```
-~/.agents/skills   ~/.claude/skills   ~/.codex/skills   ~/.pi/agent/skills
-```
-
-But `deepclaude` runs Claude Code with `CLAUDE_CONFIG_DIR=~/.claude-deepseek`, and personal
-skills are read from `<CLAUDE_CONFIG_DIR>/skills`. **Without a bridge, the skills are
-installed on disk and invisible in the agent you actually use.**
-
-So this installer symlinks `surf-research-skill`, `surf-plan-skill` and `surf-free-skill`
-into `~/.claude-deepseek/skills/` as well (a plain copy on Windows/MSYS, where symlinks need
-a privilege you may not have). If a real directory already sits at one of those names, it is
-left alone — your copy wins over ours.
+So this installer clones the skill into `~/.local/share/deep-orchestrator/` (set
+`DEEP_ORCHESTRATOR_SRC` before running to point at a local path or another URL instead) and
+bridges it — `SKILL.md` plus `scripts/`, `prompts/` and `templates/` — into
+`~/.claude/skills/deep-orchestrator` **and** `~/.claude-deepseek/skills/deep-orchestrator`
+(a plain copy on Windows/MSYS, where symlinks need a privilege you may not have). If a real
+directory already sits at one of those names, it is left alone — your copy wins over ours.
 
 Set `DEEPCLAUDE_DIR` before running if your `deepclaude` config lives somewhere else; it is
 the same variable the launcher reads.
@@ -104,74 +102,65 @@ request whose `Host`/`Origin` comes from elsewhere. **Do not expose it to a netw
 
 ---
 
-## surf-skill — research that comes back with citations
+## deep-orchestrator — the agent that organizes itself
 
-Without it, an agent asked to "look this up" either guesses or burns your context window
-orchestrating its own search loop. surf-skill moves that loop into a CLI: an LLM plans the
-queries, they fan out concurrently across Tavily, Parallel AI and Brave with key rotation
-and provider fallback, the LLM reads the harvest, searches again if something is still open,
-and writes a cited answer.
+A **Claude Code skill** (no binary, no npm package): an autonomous multi-agent orchestrator
+that never writes code itself. It plans, splits the task into **waves** — unlimited, with
+the plan recalculated after each wave by a PLAN REVISER sub-agent — creates a **named,
+isolated git worktree per sub-agent**, delegates in parallel, applies **adversarial
+review**, integrates each result via **squash-merge one at a time** (the gate — build +
+tests + linter — runs on an integration snapshot in an ephemeral `int-ondaN-*` worktree),
+removes worktree + branch + intermediate commits at the end of each wave, and commits
+everything at the end **without asking the user anything**. Asynchronous **testing** and
+**validation** subwaves (`test-ondaN-*`, `val-ondaN-*`) run after each wave. v3.3.0, MIT:
+<https://github.com/frederico-kluser/deep-orchestrator>.
 
-The agent's job shrinks to writing a brief and picking a mode.
+**Contained mode.** Invoked inside a git worktree — the kind [`qwe`](../01-commands/)
+creates — the skill treats that worktree as its *root of the world*: it integrates into the
+worktree's own branch, never `main`/`master`, and never writes to the main project. The
+perfect pair with `qwe`: one creates the isolated room, the other works inside it and
+cleans up after itself.
 
-```bash
-surf-search-normal  "<question>" --task … --goal … --insights …   # 1 round, fits the bash timeout
-surf-search-unlimit "<question>" --max-rounds 6                    # as many rounds as it takes
-```
+### Configure: the Brave key wizard (optional)
 
-| | `surf-search-normal` | `surf-search-unlimit` |
+The installer offers a wizard at the end. Paste a **Brave Search API key**
+(<https://api.search.brave.com/app/keys>); it validates the key **live**, stores it in
+`~/.config/aula-dev/brave.key` (mode 600) and exports it from your rc (a marked
+`BRAVE_API_KEY` block, added idempotently).
+
+The orchestrator checks its search tiers before every wave and falls back through a
+three-tier chain:
+
+| Tier | Backend | Needs |
 |---|---|---|
-| Rounds | exactly 1 | until resolved (cap 6, `--max-rounds` up to 50) |
-| Time | fitted inside the harness timeout | no self-imposed deadline |
-| Typical | 45–110 s · ~$0.01–0.03 | 2–15 min · ~$0.03–0.15 |
+| 1 | the legacy AI-powered search skill — **no longer installed by this repo**; used only if the machine still has an old installation | nothing |
+| 2 | Brave Search API | the wizard's key (optional) |
+| 3 | DuckDuckGo keyless (Instant Answer, limited coverage) | nothing — always works |
 
-**The brief is the whole job.** `--task` (what you are building) and `--goal` (the decision
-this feeds) keep the planner on target; `--insights` (what you already believe) makes it
-write queries that could *falsify* those beliefs; `--deliverable` shapes the output.
+**No key, no blocker.** Without a key the search degrades to the keyless tier and stays
+operational — `check-search-credits.sh` exits `1` in that state, which is expected and fine.
+Because installer 04 no longer ships the Tier-1 skill, a fresh machine searches through
+tiers 2/3: with the Brave key (recommended, wizard) or keyless.
 
-### Configuration
-
-```bash
-surf                            # wizard: Tavily / Parallel / Brave / OpenRouter keys,
-                                # each validated live — an invalid key is NOT saved
-surf-research-skill ai-setup    # just the OpenRouter key that powers the loop
-                                # (validating it is free: key introspection, zero tokens)
-surf-research-skill keys list   # what is stored, masked
-surf doctor                     # is everything wired up?
-```
-
-Keys are only ever written to `~/.config/surf/keys.json` (chmod 600).
-
-**Then, once per project** — this step is separate and easy to forget:
+### Use it
 
 ```bash
-cd path/to/your-project
-surf-research-skill project-config
+/deep-orchestrator <task description>      # inside a project, or a `qwe` worktree
+/deep-orchestrator max-parallel=N <task>   # optional: cap parallelism (default 20)
 ```
 
-It raises the harness's bash timeout so long research calls are not killed mid-flight. For
-Claude Code it writes `.claude/settings.local.json` with `BASH_DEFAULT_TIMEOUT_MS=300000`
-and `BASH_MAX_TIMEOUT_MS=600000` (up from a 120 s default). For GitHub Copilot CLI it writes
-`.github/copilot-hooks.json` — and there it is effectively **required**, since that harness
-defaults to a 30 s timeout.
+Trigger phrases: *"orquestre isso"*, *"resolva do início ao fim"*, *"não me pergunte nada"*,
+*"toca o barco"*. The class example — *add rate limiting to an Express API* — becomes an
+orchestration of two or more waves with named worktrees, ending as squash commits on your
+branch plus a final commit. Not for trivial one-line tasks.
 
-### Nothing here is a hard blocker
+### Security
 
-| You have | What you get |
-|---|---|
-| search keys + OpenRouter key | the full loop: plan → fan out → analyze → synthesize |
-| search keys only | real searches and a cited evidence brief, no synthesis — labelled `⚠ Degraded mode`, and that is **exit 0, a success**, not something to retry |
-| OpenRouter key only | falls back to the keyless tier and still synthesizes |
-| neither | `surf-free-skill "your query"` — Wikipedia + DuckDuckGo, zero setup |
-
-That last row is why the installer lets you skip the key wizard: you can search on a fresh
-machine with no account anywhere.
-
-**One caution.** surf-ai feeds retrieved web pages to an LLM. Its prompts carry an explicit
-rule that search results are untrusted data, but that is a mitigation, not a guarantee —
-treat a synthesized answer like any web-sourced claim and never let an agent act on one
-unreviewed. Your `--task`, `--goal` and `--insights` are sent to OpenRouter, so keep secrets
-out of them.
+The orchestrator's sub-agents run commands on your machine, each inside its own disposable
+worktree, and web search feeds page content to them — search results are untrusted data,
+and the prompts say so. Without a Brave key the search is degraded but never a hard
+blocker; the only hard stop is when **no** search tier is available at all while the task
+needs research.
 
 ---
 
@@ -179,10 +168,11 @@ out of them.
 
 ```bash
 gitcraque --version
-surf-free-skill "test query"          # works with no key at all
-surf doctor
-ls ~/.claude-deepseek/skills/         # the three surf-* skills must be here
+ls -l ~/.claude-deepseek/skills/deep-orchestrator   # deepclaude's view — the one to check
+ls -l ~/.claude/skills/deep-orchestrator            # the main harness's view
+~/.local/share/deep-orchestrator/scripts/check-search-credits.sh   # 0 = full search, 1 = keyless
 ```
 
-That last line is the one worth checking: if those symlinks are missing, `deepclaude` cannot
-see the skills.
+That middle pair is the one worth checking: if those directories are missing, `deepclaude`
+cannot see the skill.
+

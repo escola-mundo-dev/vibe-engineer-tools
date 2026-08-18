@@ -2,9 +2,9 @@
 
 The terminal setup used in the **Mundo Dev** class on AI-assisted development: four
 idempotent installers that give you a project picker, disposable git worktrees, a terminal
-tuned for agent output, Claude Code running on a DeepSeek brain, and two companion projects
-— **GitCraque** (a desktop Git client with no Electron) and **surf-skill** (autonomous web
-research for coding agents).
+tuned for agent output, Claude Code running on a DeepSeek brain, and two companion pieces —
+**GitCraque** (a desktop Git client with no Electron) and **deep-orchestrator** (an
+autonomous multi-agent orchestrator skill for Claude Code).
 
 This README is in English. **The installers themselves speak Portuguese** — every prompt,
 warning and success line you see in the terminal is pt-BR, by design: they were written for
@@ -30,7 +30,7 @@ that fits in a shell function, a config file, or a small local tool.
 ```
 projects                              land in the right repo, two keystrokes
   └─ qwe add-rate-limit -a deepclaude  isolated worktree + agent inside it
-       └─ "research X first"            surf-* skills: cited answers, not guesses
+       └─ "orquestre essa tarefa"      deep-orchestrator: waves + isolated worktrees
             └─ gitcraque                read the resulting history as a graph
                  └─ up                  back to the main repo, merge consciously
                       └─ deepeco        schedule the heavy runs for the cheap window
@@ -49,27 +49,27 @@ because agent sessions print a lot.
 | [`01-commands`](01-commands/) | Node.js (if missing), `projects-picker` | `projects`, `qwe`, `up` |
 | [`02-ghostty`](02-ghostty/) | Ghostty + JetBrainsMono Nerd Font | a terminal that survives an agent |
 | [`03-deepclaude`](03-deepclaude/) | Claude Code (if missing), 2 launchers | `deepclaude`, `deepeco`, `/eco` |
-| [`04-agent-tools`](04-agent-tools/) | `gitcraque`, `surf-skill` from npm | `gitcraque`, `surf-*`, agent skills |
+| [`04-agent-tools`](04-agent-tools/) | `gitcraque` from npm, the `deep-orchestrator` skill | `gitcraque`, `/deep-orchestrator` |
 
 Each folder has its own README with the same material at reference depth. Two of the tools
-are **separate open-source projects by the same author**, installed from npm rather than
-vendored here — file issues and stars upstream:
+are **separate open-source projects by the same author**, brought in rather than vendored
+here — file issues and stars upstream:
 
-| Project | Repo | npm | License |
+| Project | Repo | Installed as | License |
 |---|---|---|---|
-| **GitCraque** | [frederico-kluser/GitCraque](https://github.com/frederico-kluser/GitCraque) | `gitcraque` | MIT |
-| **surf-skill** | [frederico-kluser/surf-skill](https://github.com/frederico-kluser/surf-skill) | `surf-skill` | MIT |
+| **GitCraque** | [frederico-kluser/GitCraque](https://github.com/frederico-kluser/GitCraque) | npm package `gitcraque` | MIT |
+| **deep-orchestrator** | [frederico-kluser/deep-orchestrator](https://github.com/frederico-kluser/deep-orchestrator) | Claude Code skill, cloned by installer 04 (v3.3.0) | MIT |
 
 ## Contents
 
 - [Before you install](#before-you-install)
 - [Install](#install)
 - **The journey** — one task, end to end
-  - [Stop 0 — the surface you watch it on (Ghostty)](#stop-0--the-surface-you-watch-it-on-ghostty)
+  - [Stop 0 — the window you watch it on (Ghostty)](#stop-0--the-window-you-watch-it-on-ghostty)
   - [Stop 1 — land in the repo (projects)](#stop-1--land-in-the-repo-projects)
   - [Stop 2 — an isolated place to work (qwe)](#stop-2--an-isolated-place-to-work-qwe)
   - [Stop 3 — the agent (deepclaude)](#stop-3--the-agent-deepclaude)
-  - [Stop 4 — the agent stops guessing (surf-skill)](#stop-4--the-agent-stops-guessing-surf-skill)
+  - [Stop 4 — the agent orchestrates itself (deep-orchestrator)](#stop-4--the-agent-orchestrates-itself-deep-orchestrator)
   - [Stop 5 — read the history (GitCraque)](#stop-5--read-the-history-gitcraque)
   - [Stop 6 — come back and merge (up)](#stop-6--come-back-and-merge-up)
   - [Stop 7 — the cheap window (deepeco)](#stop-7--the-cheap-window-deepeco)
@@ -91,8 +91,8 @@ vendored here — file issues and stars upstream:
 |---|---|---|
 | `git` | everything | `01-commands` stops with per-OS instructions: `sudo apt install git` (Linux), `xcode-select --install` (macOS), `winget install --id Git.Git -e` (Windows) |
 | `curl` | 01 · 02 · 03 | used for `nvm`, the Nerd Font archive, the Claude Code installer and the API key check |
-| **Node.js ≥ 18** | 01 · 04 | `01-commands` installs it: Homebrew on macOS (**and fails if Homebrew is absent** — <https://brew.sh>), `nvm` v0.40.6 + `nvm install 24` on Linux, `winget OpenJS.NodeJS.LTS` on Git Bash |
-| **Node.js ≥ 22.13** | GitCraque only | `04-agent-tools` **skips GitCraque with a warning** and installs everything else. `nvm install 24`, then re-run `./install.sh 04` |
+| Node.js | 01 only | `01-commands` installs it: Homebrew on macOS (**and fails if Homebrew is absent** — <https://brew.sh>), `nvm` v0.40.6 + `nvm install 24` on Linux, `winget OpenJS.NodeJS.LTS` on Git Bash |
+| **Node.js ≥ 22.13** | GitCraque only (from 04) | `04-agent-tools` **skips GitCraque with a warning** and still installs the deep-orchestrator skill — it needs **no Node at all**. `nvm install 24`, then re-run `./install.sh 04` |
 | `sudo` + a supported package manager | 02 on Linux | `apt` (with the `mkasberg/ghostty-ubuntu` PPA), `pacman`, `dnf copr`, `zypper`, or `snap`. On an unrecognized distro with no snap, the script stops and points at <https://ghostty.org/docs/install/binary> |
 | `unzip` or `tar`, plus fontconfig | 02 on Linux | to unpack and register JetBrainsMono Nerd Font (`fc-cache`, `fc-list`) |
 | A funded **DeepSeek** account | 03 | create a key at <https://platform.deepseek.com/api_keys> — the installer validates it before storing it |
@@ -103,8 +103,9 @@ not a bug and the scripts say so, in Portuguese:
 - **Git Bash:** `01-commands` installs Node through `winget`, prints *"FECHE e REABRA o Git
   Bash"* and exits 0. Close the window, open a new one, run `./install.sh` again.
 - **Linux:** `01-commands` installs Node through `nvm` **inside its own subshell**, so the
-  parent run's `PATH` never sees it and `04-agent-tools` stops with *"Node.js não
-  encontrado"* right after `01` succeeded. Open a new terminal and run `./install.sh 04`.
+  parent run's `PATH` never sees it. Installer 04 no longer needs Node for itself: the
+  deep-orchestrator skill installs anyway and only **GitCraque is skipped**. Open a new
+  terminal and run `./install.sh 04` again to get GitCraque.
 
 ## Install
 
@@ -115,7 +116,7 @@ cd vibe-engineer-tools
 ```
 
 That runs `01 → 02 → 03 → 04` in order. **The order matters**: `01-commands` is what
-installs Node.js, and `04-agent-tools` needs it.
+installs Node.js, and `04-agent-tools` needs it for GitCraque.
 
 ```bash
 ./install.sh --list           # show the installers that exist, then exit
@@ -161,9 +162,10 @@ powershell -ExecutionPolicy Bypass -File .\03-deepclaude\install.ps1
 powershell -ExecutionPolicy Bypass -File .\04-agent-tools\install.ps1
 ```
 
-GitCraque publishes a **Linux and macOS** platform badge; `04-agent-tools` will still install
-the npm package on Windows, and its only stated requirements are Node >= 22.13 and `git` on
-your `PATH`. Installers 01 and 02 are shell-only by design.
+GitCraque publishes a **Linux and macOS** platform badge; `04-agent-tools` will still
+install the npm package on Windows, and its only stated requirements are Node ≥ 22.13 and
+`git` on your `PATH`. The deep-orchestrator skill needs **no Node at all** — just git and a
+Claude Code install. Installers 01 and 02 are shell-only by design.
 
 ### Then open a new terminal
 
@@ -176,12 +178,13 @@ type qwe up projects                 # the three functions are loaded
 projects-picker --list               # the TUI's non-interactive mode
 deepeco                              # peak/off-peak status + price table
 gitcraque --version
-surf-free-skill "test query"         # web search with no API key at all
-ls -l ~/.claude-deepseek/skills/     # the three surf-* links must be here
+ls -l ~/.claude-deepseek/skills/deep-orchestrator   # the skill must be bridged in here
 ```
 
 That last line is the one worth checking: if those links are missing, `deepclaude` cannot
-see the research skills — see [Stop 4](#stop-4--the-agent-stops-guessing-surf-skill).
+see the skill — see [Stop 4](#stop-4--the-agent-orchestrates-itself-deep-orchestrator). A
+search smoke test lives at
+`~/.local/share/deep-orchestrator/scripts/check-search-credits.sh`.
 
 ---
 
@@ -190,7 +193,7 @@ see the research skills — see [Stop 4](#stop-4--the-agent-stops-guessing-surf-
 One real task, end to end: *add rate limiting to an Express API*. Each stop introduces the
 tool that serves it, with install and configuration inline.
 
-## Stop 0 — the surface you watch it on (Ghostty)
+## Stop 0 — the window you watch it on (Ghostty)
 
 An agent session is a firehose of streamed text, and the terminal is the first thing that
 breaks.
@@ -563,7 +566,7 @@ FP8, hybrid CSA (m=4) and HCA (m'=128) attention.
 | Vision / multimodal | **Gone.** The layer rejects `type="image"` and `type="document"`. |
 | MCP | **Gone.** `mcp_servers`, `mcp_tool_use`, `mcp_tool_result` are ignored or refused. |
 | `cache_control` | **Ignored.** No manual prompt-cache breakpoints. |
-| `thinking.budget_tokens` | Accepted, then **ignored** — DeepSeek uses a qualitative `reasoning_effort`. Can surface as `API Error: 400 thinking options type cannot be disabled when reasoning_effort is set`. |
+| `thinking.budget_tokens` | Accepted, then **ignored** — DeepSeek uses a qualitative `reasoning_effort`. Can appear as `API Error: 400 thinking options type cannot be disabled when reasoning_effort is set`. |
 | Parallel tool calls | Often **serialize** in practice: lower cost, higher wall-clock. |
 | `code_execution_tool_result`, `container*` | Unsupported. |
 | `web_search_tool_result` | **Still works** — routed to DeepSeek's own engine. |
@@ -571,8 +574,9 @@ FP8, hybrid CSA (m=4) and HCA (m'=128) attention.
 Two risks that are not feature-shaped. **Hallucination**: V4 Pro scored a 94% hallucination
 propensity on AA-Omniscience, so treat confident factual claims from this stack as unverified
 by default — inside an agent loop an invented package name becomes a real install attempt and
-a real rabbit hole. Precisely why [Stop 4](#stop-4--the-agent-stops-guessing-surf-skill)
-exists. **Data retention**: sending proprietary code to public DeepSeek infrastructure means
+a real rabbit hole. Precisely why [Stop 4](#stop-4--the-agent-orchestrates-itself-deep-orchestrator)
+exists: an agent that plans, delegates to isolated worktrees and reviews adversarially
+instead of winging it. **Data retention**: sending proprietary code to public DeepSeek infrastructure means
 you no longer have Anthropic's zero-data-retention guarantees. Know your employer's policy
 before you point `qwe -a deepclaude` at a work repo; that is a decision for a human, not for
 a shell script.
@@ -584,33 +588,40 @@ disagrees:
 export CLAUDE_CODE_ENABLE_FINE_GRAINED_TOOL_STREAMING=0
 ```
 
-## Stop 4 — the agent stops guessing (surf-skill)
+## Stop 4 — the agent orchestrates itself (deep-orchestrator)
 
 You ask for rate limiting on Express. The model answers from training data, and
 `express-rate-limit` changed its options object after that data was collected. This is the
 failure mode that costs the most time, because the output *looks* right.
 
-**surf-skill** is a separate project by the same author: autonomous web research that runs
-*inside a CLI*, not inside the agent's context window. Asking a coding agent to research well
-means asking it to decompose a question, write category-diverse queries, fan them out, read
-the harvest, notice the gaps and search again — all while holding your actual task in the
-same context. It burns tokens and gives different results every run. surf-skill makes that
-loop **code**: the agent writes a four-line brief and gets a cited answer.
-<https://github.com/frederico-kluser/surf-skill> · npm `surf-skill` v7.0.0, MIT, Node ≥ 18,
-**zero npm dependencies**.
+**deep-orchestrator** is a **Claude Code skill** (no binary, no npm package): an autonomous
+multi-agent orchestrator. It never writes code itself — it plans, splits the task into
+**waves** (unlimited, with the plan recalculated dynamically after each wave by a PLAN
+REVISER sub-agent), creates a **named, isolated git worktree per sub-agent**, delegates each
+wave in parallel, applies **adversarial review**, integrates every result via **squash-merge
+one at a time** — the gate (build + tests + linter) runs against an **integration snapshot**
+in an ephemeral `int-ondaN-*` worktree, outside the critical path — removes worktree, branch
+and intermediate commits at the end of each wave, and commits everything at the end
+**without asking the user anything**. Asynchronous **testing** and **validation** subwaves
+(`test-ondaN-*`, `val-ondaN-*`) run after each wave.
+<https://github.com/frederico-kluser/deep-orchestrator> · MIT, v3.3.0.
 
 ```
-1 PLAN        an LLM (DeepSeek V4 Pro via OpenRouter) turns the brief into sub-questions
-              plus a category-diverse query array
-2 SEARCH      all queries at once, bounded worker pool: tavily → parallel → brave → keyless,
-              multi-key rotation, per-key cooldowns
-3 ANALYZE     (unlimit only) what is still open, and the queries that would close it
-4 LOOP        (unlimit only) open points become round N+1
-5 SYNTHESIZE  the answer in the shape you asked for, cited against a numbered source index
-
-surf-search-normal  = 1 → 2 → 5 (2 LLM calls, exactly one round)
-surf-search-unlimit = the full loop
+ANALYZE → PLAN → EXECUTE-ONDA (repeat, until the reviser declares convergence) → COMMIT-FINAL
 ```
+
+The class example — *add rate limiting to an Express API* — becomes an orchestration of two
+or more waves, each with its own named worktrees (a config wave, an implementation wave, a
+testing wave), and the history on your branch ends up as one squash commit per sub-agent
+plus a final commit. Worktrees and branches are gone by the end.
+
+### Contained mode is the point
+
+The skill respects the boundary the rest of this repo is built around. Invoked inside a git
+**worktree** — exactly the kind `qwe` creates — it enters **contained mode**: that worktree
+is its *root of the world*. It integrates into the worktree's own branch, **never**
+`main`/`master`, and never writes a single file into the main project. `qwe` gives the task
+an isolated room; deep-orchestrator works inside that room and cleans up after itself.
 
 ### Install, and the bridge that makes it visible
 
@@ -618,30 +629,16 @@ surf-search-unlimit = the full loop
 ./install.sh 04
 ```
 
-That runs `npm i -g surf-skill` (plus GitCraque, [Stop
-5](#stop-5--read-the-history-gitcraque)) and then does the thing this repo exists to do.
-surf-skill's postinstall symlinks its three skills into the four harness directories it
-knows about — `~/.agents/skills/`, `~/.claude/skills/`, `~/.codex/skills/`,
-`~/.pi/agent/skills/`. But `deepclaude` runs Claude Code with
-`CLAUDE_CONFIG_DIR=~/.claude-deepseek`, and personal skills are read from
-`<CLAUDE_CONFIG_DIR>/skills` — which is **not** in that list.
-
-Without a bridge the skills sit on disk, the `surf-*` binaries sit on your `PATH`,
-`surf-search-normal` works if you type it — and the class's main agent never learns the
-capability exists, with no error explaining why. So the installer mirrors them:
-
-```
-~/.claude-deepseek/skills/surf-research-skill -> <npm root -g>/surf-skill
-~/.claude-deepseek/skills/surf-plan-skill     -> <npm root -g>/surf-skill/skills/surf-plan-skill
-~/.claude-deepseek/skills/surf-free-skill     -> <npm root -g>/surf-skill/skills/surf-free-skill
-```
-
-(`surf-research-skill` points at the package root because that is where its `SKILL.md`
-lives.) On MSYS/Git Bash without symlink privileges it copies instead; the PowerShell
-installer tries a junction first, which needs no admin rights. A **real directory** at one of those paths is left alone with a warning. The test is
-"is this a symlink?", not "is this ours?" — so a symlink you made yourself pointing at your
-own checkout does get replaced. Keep a hand-rolled override as a real directory. The bridge resolves through `npm root -g`, so if you move the npm prefix later, re-run
-this installer to make the links follow.
+That clones the skill into `~/.local/share/deep-orchestrator/` (set `DEEP_ORCHESTRATOR_SRC`
+to a local path or another URL to use your own copy) and then does the thing this repo
+exists to do. `deepclaude` runs Claude Code with `CLAUDE_CONFIG_DIR=~/.claude-deepseek`, and
+personal skills are read from `<CLAUDE_CONFIG_DIR>/skills`. So the installer bridges the
+skill — `SKILL.md` + `scripts/` + `prompts/` + `templates/` — into `~/.claude/skills/` for
+the main harness **and** into `~/.claude-deepseek/skills/` for `deepclaude` (a copy on
+MSYS/Git Bash without symlink privileges; the PowerShell installer tries a junction first,
+which needs no admin rights). A **real directory** at one of those paths is left alone with
+a warning. The bridge resolves against the clone, so if the skill's home moves later,
+re-run this installer to refresh the links.
 
 It also handles the other silent failure of `npm i -g`: if the global npm prefix is not
 writable by your user (distro-packaged Node writing to `/usr/lib/node_modules`) it does
@@ -649,123 +646,54 @@ writable by your user (distro-packaged Node writing to `/usr/lib/node_modules`) 
 runs `npm config set prefix ~/.local` instead — a global npm setting, so every future
 `npm i -g` lands there too, next to everything else this repo installs.
 
-### Configure: keys
+**No Node is required** — on a machine with no Node at all, the skill installs fine; only
+GitCraque is skipped (its floor is 22.13, [Stop 5](#stop-5--read-the-history-gitcraque)).
 
-The installer offers the wizard at the end; skipping is safe, since `surf-free-skill` needs
-no key at all.
+### Configure: the Brave key wizard (optional)
 
-```bash
-surf                            # wizard: Tavily / Parallel / Brave / OpenRouter
-surf-research-skill ai-setup    # just the OpenRouter key that powers the loop
-surf-research-skill ai-setup --key sk-or-v1-...        # non-interactive
-surf-research-skill keys add --provider tavily tvly-AAA tvly-BBB tvly-CCC
-surf-research-skill keys list   # masked
-surf doctor                     # what is configured and what is ready
-```
+The installer offers the wizard at the end; skipping is safe — search degrades gracefully,
+it is never a hard blocker. The wizard asks for a **Brave Search API key**
+(<https://api.search.brave.com/app/keys>), **validates it live** (an invalid key is not
+saved), writes it to `~/.config/aula-dev/brave.key` (mode 600) and exports it from your rc
+(a marked `BRAVE_API_KEY` block, added idempotently).
 
-Where the keys come from: **OpenRouter** <https://openrouter.ai/keys> (the one surf-ai plans
-and synthesizes with), **Tavily** <https://tavily.com>, **Parallel AI** <https://parallel.ai>,
-**Brave Search API** <https://brave.com/search/api/>.
+The orchestrator checks its search tiers before every wave
+(`scripts/check-search-credits.sh`) and falls back through a three-tier chain:
 
-Keys are **live-validated** as you paste them — valid ones saved, invalid ones not — and
-validating the OpenRouter key is free (key introspection, zero tokens, zero credits).
-Everything persists to `~/.config/surf/keys.json` (`chmod 600`), the only file on disk that
-ever holds a key. You can add several keys per provider: rotation is automatic on
-`401`/`403`/`402` or persistent `5xx`, burned keys auto-reset on the 1st of the next month,
-and a `429` earns a cooldown that persists across runs. The LLM has its own fallback chain:
-`v4-pro → v4-flash-0731 → v4-flash → v3.2 → chat-v3.1`.
-
-Nothing is a hard blocker; the degrade path is the design:
-
-| You have | What happens |
-|---|---|
-| Search keys + OpenRouter key | The full loop: plan → fan-out → analyze → synthesize |
-| Search keys only | Real searches, cited evidence brief, no synthesis — labelled `⚠ Degraded mode`. **Exit 0. A success, not an error — do not retry it.** |
-| OpenRouter key only | Keyless tier (Wikipedia + DuckDuckGo) plus synthesis |
-| Neither | `surf-free-skill "query"` — zero setup, no account anywhere |
-
-### Configure: per project (do not skip this)
-
-```bash
-cd ~/dev/my-api
-surf-research-skill project-config
-```
-
-Once per repository, and the step people forget — its failure mode looks exactly like "surf
-is broken". Research calls take longer than a normal shell command, and most harnesses have a bash
-timeout that will kill them mid-flight (Pi core is the exception — it applies none). The npm postinstall writes **no** timeout config
-anywhere; this is always a separate, per-project step:
-
-| Harness | Default bash timeout | What `project-config` writes |
+| Tier | Backend | Key needed? |
 |---|---|---|
-| Claude Code | 120 s (the model may request up to 600 s) | `.claude/settings.local.json` with `BASH_DEFAULT_TIMEOUT_MS=300000`, `BASH_MAX_TIMEOUT_MS=600000` |
-| GitHub Copilot CLI | **30 s** — the most fragile of the three; **required** here | `.github/copilot-hooks.json` with `{"timeoutSec":300}` |
-| Pi Coding Agent | **none** in core — the best harness for `unlimit` | `.pi/settings.json` |
+| 1 | the legacy AI-powered search skill — **no longer installed by this repo**; used automatically only if the machine still has an old installation | no |
+| 2 | Brave Search API | the wizard's key (optional) |
+| 3 | DuckDuckGo keyless (Instant Answer, limited coverage) | no — always works |
 
-For `surf-search-unlimit` on Claude Code, pass `timeout: 600000` on the Bash call explicitly.
-`surf-search-normal` falls back to a 110 s self-budget when it cannot detect a harness;
-`--budget-ms N` overrides it (`0` = unlimited). `surf-search-unlimit` already runs with no
-self-budget. The `--no-budget` flag (= `SURF_NO_TIMEOUT=1`) belongs to the *manual* toolbox
-commands — `search`, `search-parallel` and friends — which otherwise self-abort at a 30 s
-guess on a no-limit harness.
+**Nothing is a hard blocker.** Without a key the search runs on the keyless tier — degraded
+but operational — and `check-search-credits.sh` exits `1`, which is **expected and fine**
+(it means "keyless only", not "broken"). Important for this repo: installer 04 no longer
+installs the Tier-1 skill, so on a fresh machine the orchestrator searches through tiers 2/3
+— with the Brave key (recommended, via the wizard) or keyless.
 
 ### Use it
 
+Inside the `deepclaude` session from Stop 3, standing in a project — or inside a `qwe`
+worktree, which switches on contained mode:
+
 ```bash
-surf-free-skill "rate limiting"                          # no key needed
-
-surf-search-normal "does express-rate-limit v8 still accept the windowMs option?" \
-  --task "adding rate limiting to an Express 5 API" \
-  --goal "know the exact options object shape for the current major" \
-  --insights "I believe windowMs and max are still top-level"
-
-surf-search-unlimit "<question>" --max-rounds 6
+/deep-orchestrator add rate limiting to the Express API, with a configurable window
+/deep-orchestrator max-parallel=4 <task>   # optional prefix: cap parallelism (default 20)
 ```
 
-Or, inside the `deepclaude` session from Stop 3, just ask: *"research the current
-express-rate-limit API before you write anything"* — or *"make a plan for adding rate
-limiting"*, which triggers `surf-plan-skill`: it reads the project, runs the research, asks a
-handful of research-backed questions, and only then writes a plan. Research there is gated,
-not optional.
-
-**The brief is the whole job** — these four flags separate a useful answer from a Wikipedia
-summary:
-
-| Flag | What goes in it | Why it changes the answer |
-|---|---|---|
-| `--task` | the work in progress | the planner drops queries that do not move it forward |
-| `--goal` | the decision this feeds | becomes the objective the synthesis is graded against |
-| `--insights` | what you already believe | the planner writes queries that could **falsify** each belief |
-| `--deliverable` | the output shape you need | the synthesis matches it instead of writing an essay |
-
-Long briefs go in a file: `--brief-file brief.json`.
-
-| | `surf-search-normal` | `surf-search-unlimit` |
-|---|---|---|
-| Rounds | exactly 1 | until resolved (default cap 6, `--max-rounds` up to 50) |
-| Time | fitted inside the harness bash timeout | no self-imposed deadline |
-| Typical | 45–110 s · ~$0.01–0.03 | 2–15 min · ~$0.03–0.15 |
-
-Exit codes: `0` an answer (possibly degraded) · `1` nothing retrieved at all · `2` usage
-error · `143` the harness killed it.
-
-It is also a Node library — `import { search, searchParallel, extract, research } from
-'surf-skill'` and `import { runSurfAi } from 'surf-skill/ai'` — server-side only, because
-Tavily, Parallel and OpenRouter send no CORS headers for browser origins.
+Trigger phrases: *"orquestre isso"*, *"resolva do início ao fim"*, *"não me pergunte nada"*,
+*"toca o barco"*. The agent does not just execute — it organizes itself into waves with
+isolated, named worktrees, tests and validates what it built, and commits when done. Don't
+use it for trivial one-line edits: that is what a plain session is for.
 
 ### Security
 
-Keys are only ever persisted to `~/.config/surf/keys.json` (`chmod 600`). CLI mode reads
-search keys from there and nowhere else; `OPENROUTER_API_KEY` is the single environment
-exception and is used in memory only. Library mode also reads env and `.env`, deliberately,
-for serverless and CI.
-
-**Prompt injection is mitigated, not solved.** surf-ai feeds retrieved page text to an LLM,
-and every prompt carries an explicit rule that search results are untrusted data whose
-instructions are content to report on, never to follow — a mitigation, not a guarantee, so
-never let an agent act on a synthesized answer without reading it. And **your brief goes to
-OpenRouter**: `--task`, `--goal` and `--insights` are sent as prompt text, so no secrets, no
-customer data, no proprietary source in them.
+The orchestrator delegates to sub-agents that run commands on your machine, each inside its
+own disposable worktree, and its web search feeds page content to them. Search results are
+untrusted data — the prompts say so, but treat a cited answer like any web-sourced claim.
+Contained mode confines writes to your worktree; the branch is still yours to review with
+GitCraque before you `up` and merge.
 
 ## Stop 5 — read the history (GitCraque)
 
@@ -790,9 +718,10 @@ npx gitcraque                       # or no install at all
 
 **Node ≥ 22.13 and `git` on your `PATH`. Linux and macOS.** The floor is not arbitrary: the
 project memory uses `node:sqlite`, which only drops the `--experimental-sqlite` flag at
-22.13. The installer checks that floor *separately* from surf-skill's `≥ 18` and, if your
-Node is older, **skips GitCraque with a warning instead of failing the run** — you still get
-surf-skill. Raise Node (`nvm install 24`) and re-run `./install.sh 04`; it is idempotent.
+22.13. The installer checks that floor separately from the deep-orchestrator skill, which
+needs **no Node at all**; if your Node is older, **GitCraque is skipped with a warning
+instead of failing the run** — you still get deep-orchestrator. Raise Node
+(`nvm install 24`) and re-run `./install.sh 04`; it is idempotent.
 
 One trap worth stating plainly: **install it from npm, not from the GitHub URL.**
 `npm i github:frederico-kluser/GitCraque` does not fail — it exits `0` and looks fine — but
@@ -944,22 +873,23 @@ with `core.autocrlf=true` cannot kill the script with `$'\r': command not found`
 |---|---|
 | `~/.local/bin/` | `projects-picker`, `deepclaude`, `deepeco` (and npm globals, if the prefix moved) |
 | `~/.local/share/projects-picker/` | the TUI and its `node_modules` |
+| `~/.local/share/deep-orchestrator/` | the skill's home — the clone (`SKILL.md`, `scripts/`, `prompts/`, `templates/`) |
 | `~/.local/share/fonts/JetBrainsMonoNerdFont/` | the Nerd Font, on Linux, if it was missing |
 | `~/.config/aula-dev/comandos.sh` | `projects`, `qwe`, `up` |
 | `~/.config/aula-dev/deepeco.conf` | peak/off-peak windows and prices |
+| `~/.config/aula-dev/brave.key` | optional Brave Search API key (mode 600) |
 | `~/.config/ghostty/config.ghostty` | terminal config (+ `themes/dracula`, + any `.bak-*`) |
 | `~/.claude-deepseek/` | isolated Claude Code config (mode 700) |
 | `~/.claude-deepseek/deepseek.key` | your DeepSeek key (mode 600) |
 | `~/.claude-deepseek/commands/eco.md` | the `/eco` slash command |
-| `~/.claude-deepseek/skills/` | the surf skills, bridged in for `deepclaude` |
-| `~/.config/surf/keys.json` | surf-skill's keys (mode 600) |
-| `~/.agents/skills/`, `~/.claude/skills/`, `~/.codex/skills/`, `~/.pi/agent/skills/` | surf-skill's own postinstall links — four directories covering five harnesses (`~/.agents/skills` serves both OpenCode and GitHub Copilot CLI) |
+| `~/.claude/skills/deep-orchestrator` + `~/.claude-deepseek/skills/deep-orchestrator` | the skill, bridged in for the main harness and for `deepclaude` |
 | `~/.config/aula-dev/projects.conf` | **your** projects folder — written by `projects --setup`; the installer never overwrites it, and no projects folder is ever created for you |
 | `~/.zshrc` / `~/.bashrc` | one marked block per concern, added idempotently |
 
 The rc blocks are delimited by `# >>> aula-dev (...) >>>` / `# <<< aula-dev (...) <<<` —
-`comandos da aula` from installer 01, `PATH ~/.local/bin` from 03, and `PATH npm global` from
-04 when the npm bin directory is somewhere other than `~/.local/bin`. Deleting a block cleanly
+`comandos da aula` from installer 01, `PATH ~/.local/bin` from 03, `PATH npm global` from 04
+when the npm bin directory is somewhere other than `~/.local/bin`, and `BRAVE_API_KEY` from
+04 when the Brave key wizard was used. Deleting a block cleanly
 uninstalls that piece. On macOS and Git Bash, where bash runs as a *login* shell and never
 reads `~/.bashrc` on its own, installer 01 also chains `~/.bash_profile → ~/.bashrc` — but
 only when a `~/.bash_profile` already exists. If you have none (common on a fresh Git Bash),
@@ -980,11 +910,7 @@ printf '\n[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"\n' >> ~/.bash_profile
 | `deepclaude [claude args]` · `--pro` · `--setup-key` · `--help` | Claude Code on V4 Flash · session on V4 Pro · key setup |
 | `deepeco` · `--short` · `--help` · `/eco` | peak/off-peak status + price table; `--short` is what `deepclaude` prints at launch, `/eco` is the in-session version |
 | `gitcraque [path]` · `--repo` · `--port` · `--no-open` | the Git client, in your browser, on 127.0.0.1 |
-| `surf-free-skill "q"` | keyless web search |
-| `surf-search-normal "q" --task … --goal …` | one research round, cited |
-| `surf-search-unlimit "q" --max-rounds 6` | rounds until resolved |
-| `surf` · `surf doctor` · `surf-research-skill keys list` | key wizard · diagnostics · stored keys |
-| `surf-research-skill project-config` | per-project harness timeout config |
+| `/deep-orchestrator <task>` · `max-parallel=N` | autonomous multi-agent orchestration: waves, named worktrees, squash-merge, final commit |
 
 ## deepclaude environment overrides
 
@@ -1043,7 +969,7 @@ the only lever you have.
 |---|---|
 | `projects` / `qwe` / `up`: command not found | You are in the shell that was open during install. Open a new terminal, or `source ~/.zshrc`. |
 | `projects` prints a banner instead of changing directory | Something wrote to **stdout**. The picker's UI and all banners must go to stderr. |
-| `04-agent-tools` says *"Node.js não encontrado"* right after `01` installed Node | On Linux, `01` installs Node with `nvm` inside its own subshell, so the parent run never sees it. Open a new terminal and run `./install.sh 04`. |
+| `04-agent-tools` skipped GitCraque (no Node, or Node < 22.13) | Expected on a fresh machine: `01` installs Node with `nvm` inside its own subshell, so the parent run never sees it — or Node is older than 22.13. The deep-orchestrator skill installed anyway. Open a new terminal and run `./install.sh 04` to get GitCraque. |
 | On Git Bash the run stops after `01` with *"FECHE e REABRA o Git Bash"* | Expected: Node was just installed via winget. Close Git Bash, reopen it, run `./install.sh` again. |
 | PowerShell refuses to run `install.ps1` | Unsigned scripts are blocked by default: `powershell -ExecutionPolicy Bypass -File .\install.ps1`. |
 | Ghostty config "does nothing" | You restarted instead of reloading, or the key needs a **new window** (`gtk-titlebar-style`, `window-theme`). |
@@ -1055,9 +981,9 @@ the only lever you have.
 | The agent claims it edited files, the disk disagrees | `export CLAUDE_CODE_ENABLE_FINE_GRAINED_TOOL_STREAMING=0` |
 | Auto-compact fires far too early | `CLAUDE_CODE_MAX_CONTEXT_TOKENS` is missing; the CLI assumed 200K. |
 | `gitcraque` was not installed | Node < 22.13 (`node:sqlite`). `nvm install 24`, then re-run `./install.sh 04`. |
-| The agent cannot see the `surf-*` skills | The bridge into `~/.claude-deepseek/skills/` did not run, or a real directory sits at one of those paths. Re-run `./install.sh 04` and read the warnings. |
-| `⚠ Degraded mode — no LLM synthesis` | No usable OpenRouter key. The searches ran; you have a cited evidence brief. **Exit 0 — a success.** Run `surf-research-skill ai-setup`. |
-| surf calls die at 30 s or 120 s | Harness bash timeout. Run `surf-research-skill project-config` in that project. |
+| The agent cannot see the deep-orchestrator skill | The bridge into `~/.claude-deepseek/skills/` did not run, or a real directory sits at that path. Re-run `./install.sh 04` and read the warnings. |
+| `check-search-credits.sh` exits 1 — search degraded | No Brave key: only the keyless tier is available. **Expected, exit 1 is fine** — search stays operational, just limited. Re-run `./install.sh 04` and take the key wizard for full search. |
+| deep-orchestrator does not appear in `deepclaude` | Re-run `./install.sh 04` — bridging into `~/.claude-deepseek/skills/` is part of it. |
 | `npm i -g` fails with EACCES | Do not `sudo`. `npm config set prefix ~/.local` — which is what installer 04 does for you. |
 
 ## Uninstall
@@ -1080,21 +1006,22 @@ rm -rf ~/.claude-deepseek        # ⚠ includes the DeepSeek key and this accoun
 rm -f  ~/.config/aula-dev/deepeco.conf
 
 # 04-agent-tools
-npm rm -g gitcraque surf-skill   # note: npm 7+ no longer runs uninstall lifecycle
-                                 # scripts, so surf-skill's own symlinks in
-                                 # ~/.agents ~/.claude ~/.codex ~/.pi survive — broken.
-                                 # Remove them yourself:
-                                 #   rm -f ~/.{agents,claude,codex}/skills/surf-*-skill
-                                 #   rm -f ~/.pi/agent/skills/surf-*-skill
-# The bridge into deepclaude. -rf, not -f: on Windows/MSYS the installer copies
-# instead of linking, and `rm -f` cannot remove a directory.
-# (Skip if you already ran the `rm -rf ~/.claude-deepseek` line above.)
-rm -rf ~/.claude-deepseek/skills/surf-research-skill \
-       ~/.claude-deepseek/skills/surf-plan-skill \
-       ~/.claude-deepseek/skills/surf-free-skill
-rm -rf ~/.config/surf            # ⚠ deletes your stored search / OpenRouter keys
-npm config delete prefix         # only if installer 04 moved it to ~/.local
+npm rm -g gitcraque
+# The deep-orchestrator skill: two bridges plus the cloned home.
+# -rf, not -f: on Windows/MSYS the installer copies instead of linking,
+# and `rm -f` cannot remove a directory.
+rm -rf ~/.claude/skills/deep-orchestrator \
+       ~/.claude-deepseek/skills/deep-orchestrator \
+       ~/.local/share/deep-orchestrator
+rm -f  ~/.config/aula-dev/brave.key    # only if you ran the Brave key wizard
+npm config delete prefix               # only if installer 04 moved it to ~/.local
 ```
+
+Machines that used an older version of this repo may still carry the legacy npm search
+skill. Remove it by hand if you want it gone — `npm rm -g` its package, its skill
+directories under `~/.claude/skills`, `~/.claude-deepseek/skills` and the other harness
+skill folders it symlinked into, and its keys directory under `~/.config`; without it the
+orchestrator's search simply uses its remaining tiers.
 
 Then delete the `aula-dev` marked blocks from `~/.zshrc` / `~/.bashrc`. Ghostty itself is
 removed with the package manager that installed it (`sudo apt remove ghostty`,
@@ -1102,7 +1029,8 @@ removed with the package manager that installed it (`sudo apt remove ghostty`,
 with the PPA or COPR repository it added if you want that gone too.
 
 Deleting a local file does not revoke a credential: revoke the DeepSeek key at
-<https://platform.deepseek.com/api_keys> and the search-provider keys at their own dashboards.
+<https://platform.deepseek.com/api_keys> and the Brave key at
+<https://api.search.brave.com/app/keys>.
 
 ## Repository layout
 
@@ -1131,10 +1059,10 @@ with CRLF and bash dies with `$'\r': command not found` before printing anything
 
 ## Credits
 
-**GitCraque** and **surf-skill** are independent projects by [Frederico
-Kluser](https://github.com/frederico-kluser), both MIT, installed from npm and not vendored or
-forked here — their own READMEs are the authority on their behaviour, and issues and stars
-belong upstream. [Ghostty](https://ghostty.org/) is by Mitchell Hashimoto, with the official
+**GitCraque** (an npm package) and **deep-orchestrator** (a Claude Code skill) are
+independent projects by [Frederico Kluser](https://github.com/frederico-kluser), both MIT —
+GitCraque from npm, the skill cloned by installer 04 — not vendored or forked here: their
+own READMEs are the authority on their behaviour, and issues and stars belong upstream. [Ghostty](https://ghostty.org/) is by Mitchell Hashimoto, with the official
 [dracula/ghostty](https://github.com/dracula/ghostty) theme port and the
 [nerd-fonts](https://github.com/ryanoasis/nerd-fonts) JetBrainsMono build; [Claude
 Code](https://code.claude.com/docs) is by Anthropic and `deepclaude` launches the official
