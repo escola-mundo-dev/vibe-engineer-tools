@@ -80,5 +80,4 @@ cat <<'EOF'
   up                       volta da worktree pro repo principal
   deepeco                  a janela de economia da DeepSeek está aberta agora?
   gitcraque                cliente Git de desktop no navegador
-  surf-free-skill "algo"   pesquisa web sem chave nenhuma
 EOF
