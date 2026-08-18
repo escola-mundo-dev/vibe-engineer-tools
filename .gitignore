@@ -1,0 +1,12 @@
+# Installers ship a pre-built payload; nothing here is built at clone time.
+node_modules/
+*.log
+
+# Backups the installers create on the USER's machine (never inside the repo,
+# but listed so a stray copy can't be committed by accident).
+*.bak-*
+*.pre-aula-bak-*
+
+# Secrets never belong here — the key lives at ~/.claude-deepseek/deepseek.key.
+*.key
+.env

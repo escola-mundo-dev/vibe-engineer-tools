@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+# deepclaude — Claude Code (binário OFICIAL) com o cérebro do DeepSeek,
+# servido pelo endpoint Anthropic-compatível da PRÓPRIA DeepSeek.
+#
+#   deepclaude [args do claude]        ex.: deepclaude -p "resuma o repo"
+#   deepclaude --pro [args]            sobe ESTA sessão no V4 Pro
+#   deepclaude --setup-key             pede a chave DeepSeek, VALIDA na API e
+#                                      grava globalmente (<dir>/deepseek.key)
+#
+# É a FONTE ÚNICA do ambiente desta conta: o `qwe -a deepclaude` delega aqui.
+# Não recrie os pins de modelo em outro lugar — um pin que falta não dá erro,
+# só troca de modelo em silêncio.
+#
+# ⚠️ POR QUE OS SEIS PINS SÃO OBRIGATÓRIOS (medido com curl):
+#   api.deepseek.com/anthropic mapeia por PREFIXO: claude-* → deepseek-v4-*.
+#     claude-opus-*    -> deepseek-v4-pro
+#     claude-sonnet-*  -> deepseek-v4-flash   ← por isso o pin de SONNET é crítico
+#     claude-haiku-*   -> deepseek-v4-flash
+#   Sem os pins, o agente principal (que o CLI chama de sonnet em várias rotas)
+#   rodaria no flash em silêncio.
+#
+# ⚠️ POLÍTICA DE MODELO — TUDO NO V4 FLASH (igual à aula):
+#   O `deepseek-v4-flash` servido hoje é o build 0731 (31/07/2026), re-pós-treino
+#   agressivo para uso de ferramenta e agente; supera o V4 Pro Preview em
+#   Terminal Bench 2.1 (82,7 x 72,1), DeepSWE (54,4 x 12,8) e no índice da
+#   Artificial Analysis (52 x 45) — sendo ~3x mais barato e ~1,7x mais rápido.
+#   O V4 Pro (build 0813 GA) fica a um comando: `--pro` (sessão) ou
+#   `/model fable` (dentro da sessão; volta com `/model sonnet`).
+#
+# Chave (primeira que existir vence):
+#   1. $DEEPCLAUDE_API_KEY                 (override explícito)
+#   2. <dir>/deepseek.key                  (padrão global, chmod 600)
+set -euo pipefail
+
+# Banner MUNDO DEV — abre toda invocação (stderr: não suja `deepclaude -p`
+# em pipes). Desligue com MUNDO_DEV_BANNER=0.
+if [ "${MUNDO_DEV_BANNER:-1}" != "0" ]; then
+  cat >&2 <<'MDB'
+┏┳┓╻ ╻┏┓╻╺┳┓┏━┓   ╺┳┓┏━╸╻ ╻
+┃┃┃┃ ┃┃┗┫ ┃┃┃ ┃    ┃┃┣╸ ┃┏┛
+╹ ╹┗━┛╹ ╹╺┻┛┗━┛   ╺┻┛┗━╸┗┛
+MDB
+fi
+
+DIR="${DEEPCLAUDE_DIR:-$HOME/.claude-deepseek}"
+# O sufixo `[1m]` seleciona a variante de 1M de contexto — é o que a própria
+# DeepSeek prescreve no guia de Claude Code (api-docs.deepseek.com).
+MODEL="${DEEPCLAUDE_MODEL:-deepseek-v4-flash[1m]}"
+# Slot `haiku` (tarefas de fundo do CLI). Segue o principal por padrão.
+FLASH="${DEEPCLAUDE_HAIKU_MODEL:-$MODEL}"
+# Slot `fable` = escape hatch para o V4 Pro, trocável DENTRO da sessão
+# com `/model fable` (volta com `/model sonnet`).
+FABLE="${DEEPCLAUDE_FABLE_MODEL:-deepseek-v4-pro[1m]}"
+BASE_URL="${DEEPCLAUDE_BASE_URL:-https://api.deepseek.com/anthropic}"
+# O CLI não reconhece `deepseek-*` como modelo Claude e assumiria 200k de
+# janela — auto-compact dispararia a 1/5 do que o modelo aguenta.
+CTX="${DEEPCLAUDE_MAX_CONTEXT_TOKENS:-1048576}"
+# Gatilho do auto-compact: 786432 = 75% de 1M. É o valor que a PRÓPRIA DeepSeek
+# prescreve no guia oficial de Claude Code — declarar só a janela não basta,
+# porque a saída pode chegar a 384K e precisa caber no que sobrou.
+COMPACT="${DEEPCLAUDE_AUTO_COMPACT_WINDOW:-786432}"
+
+# ── Validação de chave na API (usada pelo --setup-key e pelo 1º uso) ─────────
+# GET /user/balance: não consome tokens; 200 = chave válida (e mostra o saldo),
+# 401 = inválida. Endpoint OpenAI-style, fora do prefixo /anthropic.
+_validar_chave() {  # $1 = chave; ecoa o saldo em stdout se válida
+  local http body
+  body="$(mktemp)"
+  http="$(curl -sS -o "$body" -w '%{http_code}' \
+          -H "Authorization: Bearer $1" \
+          https://api.deepseek.com/user/balance 2>/dev/null || echo 000)"
+  case "$http" in
+    200)
+      # extrai total_balance + currency sem depender de jq
+      grep -o '"total_balance":"[^"]*"' "$body" | head -n1 | cut -d'"' -f4 | tr -d '\n'
+      printf ' '
+      grep -o '"currency":"[^"]*"' "$body" | head -n1 | cut -d'"' -f4
+      rm -f "$body"; return 0 ;;
+    401) rm -f "$body"; echo "chave INVÁLIDA (HTTP 401)" >&2; return 1 ;;
+    000) rm -f "$body"; echo "sem conexão com api.deepseek.com — verifique a rede" >&2; return 2 ;;
+    *)   rm -f "$body"; echo "resposta inesperada da API (HTTP $http)" >&2; return 1 ;;
+  esac
+}
+
+_setup_key() {
+  echo "── Configuração global da chave DeepSeek ──" >&2
+  echo "Crie/copie a sua chave em: https://platform.deepseek.com/api_keys" >&2
+  local tentativa chave saldo
+  # Ctrl+C no meio do prompt sem eco não pode deixar o terminal mudo.
+  trap 'stty echo 2>/dev/null || true' EXIT INT TERM
+  for tentativa in 1 2 3; do
+    printf 'Cole a chave (sk-…): ' >&2
+    # sem eco no terminal — a chave não aparece nem fica no histórico
+    stty -echo 2>/dev/null || true
+    IFS= read -r chave
+    stty echo 2>/dev/null || true
+    printf '\n' >&2
+    [ -z "$chave" ] && { echo "vazio — tente de novo" >&2; continue; }
+    printf 'Validando na API… ' >&2
+    if saldo="$(_validar_chave "$chave")"; then
+      echo "✅ válida — saldo: $saldo" >&2
+      mkdir -p "$DIR" && chmod 700 "$DIR"
+      umask 177
+      printf '%s\n' "$chave" > "$DIR/deepseek.key"
+      chmod 600 "$DIR/deepseek.key"
+      echo "✅ gravada em $DIR/deepseek.key (chmod 600) — vale para TODAS as sessões" >&2
+      return 0
+    fi
+    echo "(tentativa $tentativa de 3)" >&2
+  done
+  echo "deepclaude: não consegui validar uma chave — nada foi gravado" >&2
+  return 1
+}
+
+# `--setup-key` e `--pro` são consumidos ANTES de repassar args ao claude.
+case "${1:-}" in
+  --setup-key) shift; _setup_key; exit $? ;;
+esac
+if [ "${1:-}" = "--pro" ]; then
+  shift
+  MODEL="deepseek-v4-pro[1m]"
+  FLASH="${DEEPCLAUDE_HAIKU_MODEL:-$MODEL}"
+  echo "deepclaude: sessão no deepseek-v4-pro (codegen/refatoração pesada)" >&2
+fi
+
+case "${1:-}" in
+  -h|--help)
+    cat <<EOF
+deepclaude — Claude Code com cérebro DeepSeek (via api.deepseek.com)
+
+  deepclaude [args do claude]
+  deepclaude --pro [args]     sobe esta sessao no V4 Pro
+  deepclaude --setup-key      pede + valida + grava a chave DeepSeek (global)
+
+Ambiente (todos opcionais):
+  DEEPCLAUDE_DIR         dir de config isolado (default: ~/.claude-deepseek)
+  DEEPCLAUDE_API_KEY     chave DeepSeek        (default: <dir>/deepseek.key)
+  DEEPCLAUDE_MODEL       modelo principal      (default: deepseek-v4-flash[1m])
+  DEEPCLAUDE_HAIKU_MODEL modelo do slot haiku  (default: = o principal)
+  DEEPCLAUDE_FABLE_MODEL modelo do slot fable  (default: deepseek-v4-pro[1m])
+  DEEPCLAUDE_BASE_URL    endpoint              (default: https://api.deepseek.com/anthropic)
+  DEEPCLAUDE_MAX_CONTEXT_TOKENS   janela declarada  (default: 1048576)
+  DEEPCLAUDE_AUTO_COMPACT_WINDOW  auto-compact em   (default: 786432)
+
+Trocar de modelo DENTRO da sessao (sem reiniciar):
+  /model fable    -> V4 Pro 0813 (GA de 13/08/2026)
+  /model sonnet   -> volta pro V4 Flash 0731
+
+Economia off-peak: rode \`deepeco\` (ou /eco dentro da sessao) para ver se a
+janela de desconto da DeepSeek esta aberta agora e quanto custa cada modelo.
+EOF
+    exit 0 ;;
+esac
+
+key="${DEEPCLAUDE_API_KEY:-}"
+[ -z "$key" ] && [ -r "$DIR/deepseek.key" ] && key="$(head -n1 "$DIR/deepseek.key")"
+if [ -z "$key" ]; then
+  if [ -t 0 ]; then
+    echo "deepclaude: nenhuma chave configurada ainda — iniciando o setup." >&2
+    _setup_key || exit 1
+    key="$(head -n1 "$DIR/deepseek.key")"
+  else
+    echo "deepclaude: sem chave — rode 'deepclaude --setup-key' (grava em $DIR/deepseek.key) ou exporte DEEPCLAUDE_API_KEY" >&2
+    exit 1
+  fi
+fi
+
+[ -d "$DIR" ] || { mkdir -p "$DIR" && chmod 700 "$DIR"; }
+
+# Banner de economia: mostra se a janela off-peak da DeepSeek está aberta.
+command -v deepeco >/dev/null 2>&1 && deepeco --short >&2 || true
+
+# `env -u ANTHROPIC_API_KEY`: REMOVE a variável em vez de setá-la vazia — o
+# AUTH_TOKEN já vence na precedência oficial, mas remover elimina qualquer
+# ambiguidade de "chave vazia" herdada do shell.
+# A env é prefixada ao comando: existe SÓ neste processo, nada vaza pro shell.
+exec env -u ANTHROPIC_API_KEY \
+  CLAUDE_CONFIG_DIR="$DIR" \
+  ANTHROPIC_BASE_URL="$BASE_URL" \
+  ANTHROPIC_AUTH_TOKEN="$key" \
+  ANTHROPIC_MODEL="$MODEL" \
+  ANTHROPIC_DEFAULT_OPUS_MODEL="$MODEL" \
+  ANTHROPIC_DEFAULT_SONNET_MODEL="$MODEL" \
+  ANTHROPIC_DEFAULT_HAIKU_MODEL="$FLASH" \
+  ANTHROPIC_DEFAULT_FABLE_MODEL="$FABLE" \
+  CLAUDE_CODE_SUBAGENT_MODEL="$MODEL" \
+  CLAUDE_CODE_MAX_CONTEXT_TOKENS="$CTX" \
+  CLAUDE_CODE_AUTO_COMPACT_WINDOW="$COMPACT" \
+  claude --dangerously-skip-permissions --effort max "$@"

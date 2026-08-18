@@ -1,0 +1,12 @@
+# Trava de fim-de-linha: sem isto, um clone no Windows com core.autocrlf=true
+# (default do Git for Windows) materializa os .sh/.conf com CRLF e o bash
+# morre com "$'\r': command not found".
+*.sh    text eol=lf
+*.conf  text eol=lf
+*.md    text eol=lf
+*.js    text eol=lf
+*.json  text eol=lf
+deepclaude text eol=lf
+deepeco    text eol=lf
+# PowerShell fica nativo do Windows (o BOM UTF-8 já está nos arquivos).
+*.ps1   text eol=crlf

@@ -1,0 +1,158 @@
+#!/usr/bin/env bash
+# deepeco — estamos na janela de economia da API DeepSeek agora?
+#
+#   deepeco            banner MUNDO DEV + status + tabela de horários/valores
+#   deepeco --short    status + tabela, sem o banner (é o que o `deepclaude`
+#                      imprime ao subir — ele já mostra o banner dele)
+#
+# REGIME (fontes oficiais DeepSeek, reconferido em 17/08/2026 — JÁ EM VIGOR
+# desde 16/08/2026 16:00 UTC): os horários de PICO custam 2× e TODO o resto
+# do dia (17h) é economia (metade do pico). Os picos são definidos em UTC pelo relógio do
+# SERVIDOR da API — este script converte para o SEU fuso automaticamente
+# (via `date +%z`), então a saída bate com o UTC-3 do Brasil e com qualquer
+# outro fuso.
+#
+# Janela e preços vivem em ~/.config/aula-dev/deepeco.conf — quando a
+# DeepSeek mudar a política, atualize lá, sem tocar neste script.
+set -euo pipefail
+
+# ── Banner MUNDO DEV (desligue com MUNDO_DEV_BANNER=0) ──────────────────────
+_mundo_dev_banner() {
+  [ "${MUNDO_DEV_BANNER:-1}" = "0" ] && return 0
+  cat <<'MDB'
+┏┳┓╻ ╻┏┓╻╺┳┓┏━┓   ╺┳┓┏━╸╻ ╻
+┃┃┃┃ ┃┃┗┫ ┃┃┃ ┃    ┃┃┣╸ ┃┏┛
+╹ ╹┗━┛╹ ╹╺┻┛┗━┛   ╺┻┛┗━╸┗┛
+MDB
+}
+
+# ── Defaults (sobrescritos pelo deepeco.conf) ────────────────────────────────
+ECO_ATIVO=1                              # 0 = sem variação de preço por horário
+ECO_PICOS_UTC="01:00-04:00 06:00-10:00"  # janelas de PICO em UTC, em ORDEM CRONOLÓGICA
+ECO_DESCONTO_LABEL="economia = metade do preço de pico (50% off, todos os modelos)"
+# Tarifas por 1M tokens (cache hit / cache miss / output) — células da tabela.
+# Manter ASCII puro: a largura das colunas é calculada por contagem de chars.
+ECO_PRECO_FLASH_ECONOMIA='$0.007 / $0.22 / $0.66'
+ECO_PRECO_PRO_ECONOMIA='$0.022 / $0.66 / $1.98'
+ECO_PRECO_FLASH_PICO='$0.014 / $0.44 / $1.32'
+ECO_PRECO_PRO_PICO='$0.044 / $1.32 / $3.96'
+ECO_FONTE="https://api-docs.deepseek.com/quick_start/pricing/"
+
+CONF="${DEEPECO_CONF:-$HOME/.config/aula-dev/deepeco.conf}"
+# `tr -d '\r'` ANTES do source: um clone no Windows com core.autocrlf=true
+# entrega o conf com CRLF, e até uma linha em branco com \r viraria "comando
+# $'\r' não encontrado" e mataria o script (set -e). O <() é bash 3.2-ok.
+# shellcheck disable=SC1090
+[ -r "$CONF" ] && . <(tr -d '\r' < "$CONF")
+
+# ── Relógio ──────────────────────────────────────────────────────────────────
+_min()  { local h m; h="${1%%:*}"; m="${1##*:}"; printf '%d' "$(( 10#$h * 60 + 10#$m ))"; }
+_hhmm() { printf '%02d:%02d' "$(( $1 / 60 ))" "$(( $1 % 60 ))"; }
+_dur()  { if [ "$1" -ge 60 ]; then printf '%dh%02d' "$(( $1 / 60 ))" "$(( $1 % 60 ))"; else printf '%d min' "$1"; fi; }
+
+# UMA leitura só do relógio (duas chamadas na virada de hora dariam −60 min).
+now_hm="$(date -u +%H:%M)"
+now_utc=$(_min "$now_hm")
+
+# Offset local (ex.: -0300 → -180 min) — funciona em GNU e BSD date.
+tz_raw="$(date +%z)"
+tz_hh="${tz_raw:1:2}"; tz_mm="${tz_raw:3:2}"
+tz_off=$(( 10#$tz_hh * 60 + 10#$tz_mm ))
+case "$tz_raw" in -*) tz_off=$(( -tz_off )) ;; esac
+tz_label="UTC$( [ "$tz_off" -ge 0 ] && printf '+'; printf '%d' $(( tz_off / 60 )) )"
+tz_rest=$(( tz_off % 60 )); tz_rest="${tz_rest#-}"
+[ "$tz_rest" -ne 0 ] && tz_label="$tz_label:$(printf '%02d' "$tz_rest")"
+
+_local() { _hhmm "$(( ( $1 + tz_off + 2880 ) % 1440 ))"; }
+
+# ── Picos (e os segmentos de economia entre eles) ────────────────────────────
+em_pico=0
+fim_pico=0                 # fim do pico atual (min UTC), se em_pico=1
+prox_pico_delta=99999      # minutos até o próximo pico começar
+prox_pico_ini=0
+picos_loc_str=""           # horários de pico no fuso local (célula da tabela)
+p_ini=(); p_fim=()
+for jan in $ECO_PICOS_UTC; do
+  i=$(_min "${jan%%-*}"); f=$(_min "${jan##*-}")
+  p_ini+=("$i"); p_fim+=("$f")
+  [ -n "$picos_loc_str" ] && picos_loc_str="$picos_loc_str e "
+  picos_loc_str="$picos_loc_str$(_local "$i")-$(_local "$f")"
+  # pertencimento (ciente de janela que cruza a meia-noite UTC)
+  if [ "$i" -le "$f" ]; then
+    if [ "$now_utc" -ge "$i" ] && [ "$now_utc" -lt "$f" ]; then em_pico=1; fim_pico=$f; fi
+  else
+    if [ "$now_utc" -ge "$i" ] || [ "$now_utc" -lt "$f" ]; then em_pico=1; fim_pico=$f; fi
+  fi
+  d=$(( ( i - now_utc + 1440 ) % 1440 ))
+  if [ "$d" -lt "$prox_pico_delta" ]; then prox_pico_delta=$d; prox_pico_ini=$i; fi
+done
+ate_economia=$(( ( fim_pico - now_utc + 1440 ) % 1440 ))
+
+# Economia = os intervalos ENTRE os picos (fim de um → início do próximo,
+# ciclicamente) — por isso o conf exige as janelas em ordem cronológica.
+eco_loc_str=""
+n=${#p_ini[@]}
+for (( k = 0; k < n; k++ )); do
+  nx=$(( (k + 1) % n ))
+  [ -n "$eco_loc_str" ] && eco_loc_str="$eco_loc_str e "
+  eco_loc_str="$eco_loc_str$(_local "${p_fim[k]}")-$(_local "${p_ini[nx]}")"
+done
+
+# ── Tabela de horários e valores (bordas finas, mesmo traço do banner) ──────
+_rep() { printf '%*s' "$1" '' | sed 's/ /─/g'; }
+_wmax() { local m=0 s; for s in "$@"; do [ "${#s}" -gt "$m" ] && m=${#s}; done; printf '%d' "$m"; }
+
+_tabela() {
+  # células 100% ASCII: printf %-*s alinha por BYTES, e byte = char só em ASCII
+  local m_eco="  " m_pico="  "
+  if [ "$em_pico" = "1" ]; then m_pico="> "; else m_eco="> "; fi
+  local h1="faixa"            r1c1="${m_eco}economia" r2c1="${m_pico}pico (2x)"
+  local h2="horario ($tz_label)" r1c2="$eco_loc_str"  r2c2="$picos_loc_str"
+  local h3="v4-flash (hit/miss/out)" r1c3="$ECO_PRECO_FLASH_ECONOMIA" r2c3="$ECO_PRECO_FLASH_PICO"
+  local h4="v4-pro (hit/miss/out)"   r1c4="$ECO_PRECO_PRO_ECONOMIA"   r2c4="$ECO_PRECO_PRO_PICO"
+  local w1 w2 w3 w4
+  w1=$(_wmax "$h1" "$r1c1" "$r2c1"); w2=$(_wmax "$h2" "$r1c2" "$r2c2")
+  w3=$(_wmax "$h3" "$r1c3" "$r2c3"); w4=$(_wmax "$h4" "$r1c4" "$r2c4")
+  printf '┌─%s─┬─%s─┬─%s─┬─%s─┐\n' "$(_rep "$w1")" "$(_rep "$w2")" "$(_rep "$w3")" "$(_rep "$w4")"
+  printf '│ %-*s │ %-*s │ %-*s │ %-*s │\n' "$w1" "$h1" "$w2" "$h2" "$w3" "$h3" "$w4" "$h4"
+  printf '├─%s─┼─%s─┼─%s─┼─%s─┤\n' "$(_rep "$w1")" "$(_rep "$w2")" "$(_rep "$w3")" "$(_rep "$w4")"
+  printf '│ %-*s │ %-*s │ %-*s │ %-*s │\n' "$w1" "$r1c1" "$w2" "$r1c2" "$w3" "$r1c3" "$w4" "$r1c4"
+  printf '│ %-*s │ %-*s │ %-*s │ %-*s │\n' "$w1" "$r2c1" "$w2" "$r2c2" "$w3" "$r2c3" "$w4" "$r2c4"
+  printf '└─%s─┴─%s─┴─%s─┴─%s─┘\n' "$(_rep "$w1")" "$(_rep "$w2")" "$(_rep "$w3")" "$(_rep "$w4")"
+}
+
+_status_curto() {
+  if [ "$em_pico" = "1" ]; then
+    echo "⏰ deepeco: HORÁRIO DE PICO (preço 2×) — a economia volta às $(_local "$fim_pico") $tz_label (daqui a $(_dur "$ate_economia"))"
+  else
+    echo "💰 deepeco: ECONOMIA ATIVA (½ do preço de pico) — próximo pico às $(_local "$prox_pico_ini") $tz_label (daqui a $(_dur "$prox_pico_delta"))"
+  fi
+}
+
+# ── Saída ────────────────────────────────────────────────────────────────────
+if [ "${1:-}" = "--short" ]; then
+  if [ "$ECO_ATIVO" != "1" ]; then
+    echo "💰 deepeco: sem variação de preço por horário no momento (preço fixo)."
+    exit 0
+  fi
+  _status_curto
+  _tabela
+  exit 0
+fi
+
+_mundo_dev_banner
+echo "Agora:   $(_local "$now_utc") $tz_label  ·  $(_hhmm "$now_utc") UTC"
+if [ "$ECO_ATIVO" != "1" ]; then
+  echo "Status:  ℹ️  a DeepSeek NÃO varia preço por horário no momento — preço fixo 24h."
+  echo "         (Se isso mudar, atualize $CONF)"
+else
+  echo "Regime:  peak/off-peak — $ECO_DESCONTO_LABEL"
+  _status_curto
+  echo
+  _tabela
+  echo
+  echo "⚠️  A doc oficial não define se vale o horário de INÍCIO ou de CONCLUSÃO"
+  echo "    da requisição (na política de 2025 valia a conclusão) — perto da"
+  echo "    fronteira do pico, dê margem nas tarefas longas."
+fi
+echo "Fonte: $ECO_FONTE"
