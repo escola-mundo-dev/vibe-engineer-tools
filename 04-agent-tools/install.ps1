@@ -294,6 +294,13 @@ $bridge = Join-Path (Join-Path $DcDir 'skills') 'deep-orchestrator'
 if (Test-Path $bridge) { Ok 'deepclaude enxerga a skill deep-orchestrator' }
 else { Warn "skill deep-orchestrator não está em $DcDir\skills" }
 
+# v3.4.0: portão de aprovação do plano (FASE 2.5) — os scripts do Plannotator
+# presentes = skill recente; ausentes = versão antiga. Aviso só, sem derrubar.
+if (Test-Path (Join-Path $skillDest 'scripts\check-plannotator.sh')) { Ok 'v3.4.0+: check-plannotator.sh presente (portão de aprovação de plano)' }
+else { Warn 'check-plannotator.sh ausente — skill anterior à v3.4.0 (sem portão do plano)' }
+if (Test-Path (Join-Path $skillDest 'scripts\plan-approval.sh')) { Ok 'v3.4.0+: plan-approval.sh presente (rodadas de aprovação no Plannotator)' }
+else { Warn 'plan-approval.sh ausente — skill anterior à v3.4.0 (sem portão do plano)' }
+
 $check = Join-Path $skillDest 'scripts\check-search-credits.sh'
 if (Test-Path $check) {
     if (Get-Command bash -ErrorAction SilentlyContinue) {
@@ -325,6 +332,10 @@ Como usar (2 min) — em um terminal NOVO (para o PATH valer):
        · divide a tarefa em ondas, cria worktrees isoladas, dispara
          sub-agentes em paralelo e integra tudo com squash-merge —
          do início ao fim, sem perguntar nada
+       · com aprovação de plano: /deep-orchestrator plan=on <tarefa> —
+         abre o Plannotator no navegador para você APROVAR o plano antes
+         de qualquer execução (cada anotação regera o plano); sem prefixo
+         (ou plan=off) a autonomia é total, do início ao fim sem perguntar
        · invocado DENTRO de uma worktree (ex.: as que o `qwe` cria) =
          MODO CONTIDO: aquela worktree vira a raiz-de-mundo e nada é
          escrito no projeto principal

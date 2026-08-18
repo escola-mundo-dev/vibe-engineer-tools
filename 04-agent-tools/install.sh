@@ -373,6 +373,15 @@ fi
 [ -e "${BRIDGE:-}" ] && ok "deepclaude enxerga a skill deep-orchestrator" \
   || warn "skill deep-orchestrator não está em $DC_DIR/skills"
 
+# v3.4.0: portão de aprovação do plano (FASE 2.5) — os scripts do Plannotator
+# presentes = skill recente; ausentes = versão antiga. Aviso só, sem derrubar.
+[ -e "$SKILL_DEST/scripts/check-plannotator.sh" ] \
+  && ok "v3.4.0+: check-plannotator.sh presente (portão de aprovação de plano)" \
+  || warn "check-plannotator.sh ausente — skill anterior à v3.4.0 (sem portão do plano)"
+[ -e "$SKILL_DEST/scripts/plan-approval.sh" ] \
+  && ok "v3.4.0+: plan-approval.sh presente (rodadas de aprovação no Plannotator)" \
+  || warn "plan-approval.sh ausente — skill anterior à v3.4.0 (sem portão do plano)"
+
 CHECK_SCRIPT="$SKILL_DEST/scripts/check-search-credits.sh"
 if [ -f "$CHECK_SCRIPT" ]; then
   # exit 0 = Tier 1/2 (busca completa) · 1 = só DuckDuckGo keyless · 2 = nada.
@@ -403,6 +412,10 @@ Como usar (2 min) — em um terminal NOVO:
        · divide a tarefa em ondas, cria worktrees isoladas, dispara
          sub-agentes em paralelo e integra tudo com squash-merge —
          do início ao fim, sem perguntar nada
+       · com aprovação de plano: /deep-orchestrator plan=on <tarefa> —
+         abre o Plannotator no navegador para você APROVAR o plano antes
+         de qualquer execução (cada anotação regera o plano); sem prefixo
+         (ou plan=off) a autonomia é total, do início ao fim sem perguntar
        · invocado DENTRO de uma worktree (ex.: as que o `qwe` cria) =
          MODO CONTIDO: aquela worktree vira a raiz-de-mundo e nada é
          escrito no projeto principal
