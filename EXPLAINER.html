@@ -1,0 +1,572 @@
+<!doctype html>
+
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Diz ao navegador que a página é escura ANTES do CSS carregar: sem flash
+     branco, e os controles nativos (scrollbar, select, input) já nascem escuros. -->
+<meta name="color-scheme" content="dark">
+<title>EXPLAINER — deep-orchestrator · de-para da execução</title>
+
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous">
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+      integrity="sha384-CK2SzKma4jA5H/MXDUU7i1TqZlCFaD4T01vtyDFvPlD97JQyS+IsSh1nI2EFbpyk"
+      crossorigin="anonymous">
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
+      integrity="sha384-wH75j6z1lH97ZOpMOInqhgKzFkAInZPPSPlZpYKYTOqsaizPvhQZmAtLcPKXpLyH"
+      crossorigin="anonymous">
+
+<style>
+  /* ── Paleta do deep-orchestrator ──────────────────────────────────────────
+     Fundo #1a1a2e, accent #00d4ff (ciano), sucesso #00ff88, warning #ffaa00.
+     Tudo deriva destas variáveis — não cravamos hex no conteúdo. */
+  :root {
+    --do-bg: #1a1a2e;
+    --do-bg-soft: #16213e;
+    --do-card: #1e1e38;
+    --do-accent: #00d4ff;
+    --do-success: #00ff88;
+    --do-warning: #ffaa00;
+    --do-danger: #ff6b6b;
+  }
+
+  [data-bs-theme="dark"] {
+    --bs-body-bg: var(--do-bg);
+    --bs-body-color: #dcdce8;
+    --bs-secondary-color: #8b8ba7;
+    --bs-border-color: #2e2e4a;
+    --bs-body-font-family: system-ui, -apple-system, 'Segoe UI', Roboto,
+                           'Helvetica Neue', Arial, sans-serif;
+  }
+
+  body { background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(0,212,255,.07), transparent 60%); }
+
+  /* Âncora não fica escondida atrás da navbar fixa. */
+  [id] { scroll-margin-top: 5rem; }
+
+  a { color: var(--do-accent); }
+  a:hover { color: #4de0ff; }
+
+  .brand-accent, .stat-value { color: var(--do-accent); }
+
+  /* Navbar com borda inferior em tom de accent. */
+  .navbar { border-bottom: 1px solid rgba(0,212,255,.25); }
+
+  /* Hero com gradiente sutil: azul-noite para um leve toque ciano. */
+  .explainer-hero {
+    background: linear-gradient(135deg, #16213e 0%, #1a1a2e 55%, #0f3460 100%);
+    border: 1px solid var(--bs-border-color);
+    box-shadow: inset 0 0 2.5rem rgba(0,212,255,.05);
+  }
+
+  /* Título de seção com filete de gradiente sutil sob o texto. */
+  .pane-title { position: relative; padding-bottom: .5rem; }
+  .pane-title::after {
+    content: ''; position: absolute; left: 0; bottom: 0;
+    height: 2px; width: 4.5rem; border-radius: 2px;
+    background: linear-gradient(90deg, var(--do-accent), transparent);
+  }
+
+  /* Cards e grupos de lista: tom levemente mais claro que o fundo. */
+  .card { --bs-card-bg: var(--do-card); --bs-card-border-color: var(--bs-border-color); }
+  .card-header {
+    background: linear-gradient(90deg, rgba(0,212,255,.10), rgba(0,212,255,0));
+    border-bottom: 1px solid var(--bs-border-color);
+  }
+  .list-group-item { background-color: var(--do-card); }
+
+  /* Abas: ativa em accent com sublinhado no mesmo tom. */
+  .nav-tabs { border-bottom-color: var(--bs-border-color); }
+  .nav-tabs .nav-link { color: var(--bs-secondary-color); }
+  .nav-tabs .nav-link:hover { color: var(--bs-body-color); border-color: var(--bs-border-color) var(--bs-border-color) transparent; }
+  .nav-tabs .nav-link.active {
+    color: var(--do-accent); font-weight: 600;
+    background-color: transparent;
+    border-color: var(--bs-border-color) var(--bs-border-color) var(--do-accent);
+  }
+
+  /* Badges da paleta. */
+  .badge-accent  { background: rgba(0,212,255,.14);  color: var(--do-accent);  border: 1px solid rgba(0,212,255,.35); }
+  .badge-ok      { background: rgba(0,255,136,.12);  color: var(--do-success); border: 1px solid rgba(0,255,136,.35); }
+  .badge-warn    { background: rgba(255,170,0,.12);  color: var(--do-warning); border: 1px solid rgba(255,170,0,.35); }
+  .badge-danger  { background: rgba(255,107,107,.12); color: var(--do-danger); border: 1px solid rgba(255,107,107,.35); }
+  .badge-soft    { background: rgba(139,139,167,.12); color: var(--bs-secondary-color); border: 1px solid var(--bs-border-color); }
+
+  /* Diff stats: + verde, − vermelho, dígitos tabulares. */
+  .diff-plus  { color: var(--do-success); font-variant-numeric: tabular-nums; }
+  .diff-minus { color: var(--do-danger); font-variant-numeric: tabular-nums; }
+
+  /* De-Para: cartões com borda indicando o lado da comparação. */
+  .depara-antes  { border-color: rgba(139,139,167,.45); }
+  .depara-depois { border-color: rgba(0,255,136,.35); }
+
+  /* Timeline vertical: linha + marcador ciano com brilho sutil. */
+  .timeline { position: relative; }
+  .timeline-item { position: relative; padding-left: 1.4rem; border-left: 2px solid var(--bs-border-color); }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -.42rem; top: .3rem;
+    width: .7rem; height: .7rem; border-radius: 50%;
+    background: var(--do-accent); box-shadow: 0 0 .6rem rgba(0,212,255,.6);
+  }
+  .timeline-item:last-child { border-left-color: transparent; }
+
+  /* Bloco de código: espaço à direita para o botão de copiar não cobrir o texto. */
+  pre { position: relative; margin-bottom: 1rem; }
+  pre code.hljs { padding-right: 4rem; border-radius: var(--bs-border-radius); font-size: .875rem; }
+
+  .copy-btn { position: absolute; top: .5rem; right: .5rem; opacity: .4; transition: opacity .15s; }
+  pre:hover .copy-btn, .copy-btn:focus-visible { opacity: 1; }
+
+  /* Abrir o arquivo em #pane-x foca o painel (bom: o leitor de tela cai no
+     conteúdo), e o outline branco do navegador fica gritante. Anel discreto,
+     do tema, no lugar — tirar o indicador por completo quebraria quem navega
+     por teclado. */
+  .tab-pane:focus-visible { outline: 0; box-shadow: 0 0 0 .2rem rgba(var(--bs-emphasis-color-rgb), .15); }
+
+  /* Impressão/PDF: abre TODAS as abas, senão o papel sai com uma só. */
+  @media print {
+    .nav-tabs, .copy-btn, details, .explainer-hero { display: none !important; }
+    .tab-content > .tab-pane { display: block !important; opacity: 1 !important; page-break-inside: avoid; }
+    .tab-pane::before { content: attr(data-print-title); display: block;
+                        font-size: 1.25rem; font-weight: 600; margin: 1.5rem 0 .5rem; }
+  }
+</style>
+</head>
+
+<body class="bg-body">
+
+<nav class="navbar navbar-expand-lg sticky-top bg-body-tertiary">
+  <div class="container">
+    <span class="navbar-brand fw-semibold"><i class="bi bi-diagram-3 brand-accent me-2"></i>deep-orchestrator <span class="text-body-secondary fw-normal">· EXPLAINER</span></span>
+    <span class="navbar-text small text-body-secondary d-none d-md-inline">v1.0.0 · 2026-08-18</span>
+  </div>
+</nav>
+
+<main class="container py-4" style="max-width: 62rem">
+
+  <header class="explainer-hero rounded-4 p-4 p-md-5 mb-4">
+    <span class="badge badge-accent mb-3"><i class="bi bi-clipboard-data me-1"></i>Relatório de execução</span>
+    <h1 class="display-6 fw-semibold text-white mb-2">O que aconteceu nesta execução</h1>
+    <p class="lead text-white-50 mb-3">Remover surf-skill do instalador 04 e das instruções; adicionar e configurar a skill deep-orchestrator (principal agent skill da aula)</p>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="badge badge-accent">v1.0.0</span>
+      <span class="badge badge-soft"><i class="bi bi-calendar3 me-1"></i>2026-08-18</span>
+      <span class="badge badge-soft"><i class="bi bi-git-branch me-1"></i>main</span>
+    </div>
+  </header>
+
+  <!-- ABAS
+       Regras que não podem ser quebradas:
+       · <ul role="tablist"> e cada <button role="tab">
+       · button.id  ←→  tabpanel.aria-labelledby
+       · button.data-bs-target ←→ #id do tabpanel (e aria-controls com o mesmo id, sem #)
+       · exatamente UM botão .active + UM painel .show.active
+       O Bootstrap já faz navegação por seta/Home/End no tablist; não reimplemente. -->
+  <ul class="nav nav-tabs" id="doc-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="tab-visao" data-bs-toggle="tab" data-bs-target="#pane-visao"
+              type="button" role="tab" aria-controls="pane-visao" aria-selected="true">
+        <i class="bi bi-eye me-1"></i>Visão geral
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-ondas" data-bs-toggle="tab" data-bs-target="#pane-ondas"
+              type="button" role="tab" aria-controls="pane-ondas" aria-selected="false">
+        <i class="bi bi-layers me-1"></i>Ondas
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-arquivos" data-bs-toggle="tab" data-bs-target="#pane-arquivos"
+              type="button" role="tab" aria-controls="pane-arquivos" aria-selected="false">
+        <i class="bi bi-files me-1"></i>Arquivos
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-depara" data-bs-toggle="tab" data-bs-target="#pane-depara"
+              type="button" role="tab" aria-controls="pane-depara" aria-selected="false">
+        <i class="bi bi-arrow-left-right me-1"></i>De-Para
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-decisoes" data-bs-toggle="tab" data-bs-target="#pane-decisoes"
+              type="button" role="tab" aria-controls="pane-decisoes" aria-selected="false">
+        <i class="bi bi-lightbulb me-1"></i>Decisões
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-timeline" data-bs-toggle="tab" data-bs-target="#pane-timeline"
+              type="button" role="tab" aria-controls="pane-timeline" aria-selected="false">
+        <i class="bi bi-clock-history me-1"></i>Timeline
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content border border-top-0 rounded-bottom p-4" id="doc-tabs-content">
+
+    <!-- ══════════════ ABA 1 · VISÃO GERAL ══════════════ -->
+    <div class="tab-pane fade show active" id="pane-visao" role="tabpanel"
+         aria-labelledby="tab-visao" tabindex="0" data-print-title="Visão geral">
+      <h2 class="h4 pane-title">Resumo da execução</h2>
+      <p class="text-body-secondary">Remover surf-skill do instalador 04 e das instruções; adicionar e configurar a skill deep-orchestrator (principal agent skill da aula)</p>
+
+      <div class="alert alert-primary d-flex gap-2" role="alert">
+        <i class="bi bi-info-circle-fill flex-shrink-0"></i>
+        <div><strong>O que é este documento:</strong> o EXPLAINER gerado pelo deep-orchestrator na fase COMMIT-FINAL, ao fim de cada execução. Mostra o de-para (antes/depois) de tudo que foi feito: ondas, worktrees, arquivos modificados, decisões autônomas e timeline.</div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-6 col-lg-4">
+          <div class="card h-100 text-center">
+            <div class="card-body py-4">
+              <i class="bi bi-layers fs-3 stat-value"></i>
+              <div class="display-6 fw-bold stat-value">2</div>
+              <div class="text-body-secondary small">Ondas executadas</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-4">
+          <div class="card h-100 text-center">
+            <div class="card-body py-4">
+              <i class="bi bi-robot fs-3 stat-value"></i>
+              <div class="display-6 fw-bold stat-value">11</div>
+              <div class="text-body-secondary small">Sub-agentes</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-4">
+          <div class="card h-100 text-center">
+            <div class="card-body py-4">
+              <i class="bi bi-git-commit fs-3 stat-value"></i>
+              <div class="display-6 fw-bold stat-value">4</div>
+              <div class="text-body-secondary small">Commits (squash)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="h4 pane-title mt-5">Como este documento é gerado</h2>
+      <p>O orquestrador, na fase COMMIT-FINAL, gera o explainer a partir deste template:</p>
+<pre><code class="language-bash"># Gera o explainer a partir do template
+./scripts/generate-explainer.sh &gt; EXPLAINER.html
+# Ou preenche manualmente os placeholders 1.0.0, 2026-08-18, main, ...</code></pre>
+      <p class="text-body-secondary small">O template é <code>templates/html-explainer.html</code> — arquivo único, sem build: abre por file:// e imprime em PDF com todas as abas.</p>
+
+      <details class="mt-4">
+        <summary class="text-body-secondary">Placeholders usados na geração</summary>
+        <div class="table-responsive mt-2">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr><th scope="col">Placeholder</th><th scope="col">Onde aparece</th><th scope="col">Preenchido com</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>&#123;&#123;VERSION&#125;&#125;</code></td><td>Navbar, hero, rodapé</td><td>Versão do orquestrador</td></tr>
+              <tr><td><code>&#123;&#123;DATE&#125;&#125;</code></td><td>Navbar, hero, rodapé</td><td>Data da execução</td></tr>
+              <tr><td><code>&#123;&#123;BRANCH&#125;&#125;</code></td><td>Hero, rodapé</td><td>Branch principal</td></tr>
+              <tr><td><code>&#123;&#123;TASK_SUMMARY&#125;&#125;</code></td><td>Visão geral</td><td>Resumo da tarefa</td></tr>
+              <tr><td><code>&#123;&#123;TOTAL_WAVES&#125;&#125;</code></td><td>Cards de estatística</td><td>Número de ondas</td></tr>
+              <tr><td><code>&#123;&#123;TOTAL_AGENTS&#125;&#125;</code></td><td>Cards de estatística</td><td>Número de sub-agentes</td></tr>
+              <tr><td><code>&#123;&#123;TOTAL_COMMITS&#125;&#125;</code></td><td>Cards de estatística</td><td>Número de commits</td></tr>
+              <tr><td><code>&#123;&#123;WAVES_TABLE&#125;&#125;</code></td><td>Aba Ondas</td><td>Tabela HTML de ondas (Onda | Worktree | Tarefas | Commits | Status)</td></tr>
+              <tr><td><code>&#123;&#123;FILES_TABLE&#125;&#125;</code></td><td>Aba Arquivos</td><td>Tabela HTML de arquivos modificados (Arquivo | Tipo | Diff)</td></tr>
+              <tr><td><code>&#123;&#123;COMMITS_LIST&#125;&#125;</code></td><td>Aba Arquivos</td><td>Lista de commits squash</td></tr>
+              <tr><td><code>&#123;&#123;BEFORE_AFTER&#125;&#125;</code></td><td>Aba De-Para</td><td>Cards Antes/Depois + seções de-para adicionais</td></tr>
+              <tr><td><code>&#123;&#123;IMPACT&#125;&#125;</code></td><td>Aba De-Para</td><td>Lista de impactos da execução</td></tr>
+              <tr><td><code>&#123;&#123;CAPABILITIES&#125;&#125;</code></td><td>Aba De-Para</td><td>Grid de novas capacidades</td></tr>
+              <tr><td><code>&#123;&#123;DECISIONS&#125;&#125;</code></td><td>Aba Decisões</td><td>Lista de decisões autônomas</td></tr>
+              <tr><td><code>&#123;&#123;TIMELINE&#125;&#125;</code></td><td>Aba Timeline</td><td>Linha do tempo da execução</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+
+    <!-- ══════════════ ABA 2 · ONDAS EXECUTADAS ══════════════ -->
+    <div class="tab-pane fade" id="pane-ondas" role="tabpanel"
+         aria-labelledby="tab-ondas" tabindex="0" data-print-title="Ondas executadas">
+      <h2 class="h4 pane-title">Ondas executadas</h2>
+      <p>Uma linha por sub-agente. Cada sub-agente trabalha numa worktree Git nomeada; a integração é squash-merge um a um, com gate (build + testes) entre merges. Worktrees e branches <code>wt/*</code> são removidos ao fim de cada onda.</p>
+
+<h3>Ondas executadas</h3>
+<table class="table table-sm"><thead><tr><th>Onda</th><th>Worktree</th><th>Tarefa</th><th>Status</th></tr></thead><tbody>
+<tr><td>1</td><td>onda1-instalador-04</td><td>Instalador 04 reescrito: remove surf-skill, adiciona instalação + configuração do deep-orchestrator (GitCraque sem Node)</td><td>Merged · gate verde</td></tr>
+<tr><td>1</td><td>onda1-docs-repo</td><td>READMEs do repo: documentação surf-skill → deep-orchestrator (+ fix de precisão Ghostty)</td><td>Merged · gate verde</td></tr>
+<tr><td>1</td><td>test-onda1-instalador</td><td>Testing subwave: 9/9 pontos do contrato testados em HOME sandbox</td><td>Concluída · sem merge</td></tr>
+<tr><td>1</td><td>val-onda1-gate</td><td>Validation subwave: gate integrado + revisão adversarial do diff</td><td>Concluída · verde</td></tr>
+<tr><td>2</td><td>onda2-docs-aula</td><td>Instruções da aula: README dos instaladores + cópia do 04-agent-tools (entregável fora do git)</td><td>Merged (no-op no repo) · verificado</td></tr>
+<tr><td>2</td><td>onda2-fix-docs-04</td><td>Micro-fix: mensagem GitCraque + wording ponte Windows</td><td>Merged · gate verde</td></tr>
+<tr><td>2</td><td>onda2-fix-banner</td><td>Fix: resíduo surf-free-skill no banner do launcher</td><td>Merged · gate verde</td></tr>
+<tr><td>2</td><td>val-onda2-gate</td><td>Validation subwave do estado integrado final</td><td>Concluída · verde</td></tr>
+</tbody></table>
+
+      <h3 class="h6 mt-4 text-body-secondary">Legenda de status</h3>
+      <div class="d-flex flex-wrap gap-2">
+        <span class="badge badge-ok">Concluída</span>
+        <span class="badge badge-warn">Parcial</span>
+        <span class="badge badge-danger">Bloqueada</span>
+      </div>
+    </div>
+
+    <!-- ══════════════ ABA 3 · ARQUIVOS MODIFICADOS ══════════════ -->
+    <div class="tab-pane fade" id="pane-arquivos" role="tabpanel"
+         aria-labelledby="tab-arquivos" tabindex="0" data-print-title="Arquivos modificados">
+      <h2 class="h4 pane-title">Arquivos modificados</h2>
+      <p>Diff stats da execução: <span class="diff-plus">+</span> linhas adicionadas, <span class="diff-minus">−</span> removidas.</p>
+
+<h3>Arquivos modificados (repo)</h3>
+<table class="table table-sm"><thead><tr><th>Arquivo</th><th>Mudança</th></tr></thead><tbody>
+<tr><td>04-agent-tools/install.sh</td><td>Reescrito: surf-skill 100% removido; adiciona GitCraque (Node opcional, >= 22.13) + skill deep-orchestrator (clone ~/.local/share via DEEP_ORCHESTRATOR_SRC, skill em ~/.claude/skills + ponte ~/.claude-deepseek/skills, limpeza de resíduos surf-* só symlink, wizard BRAVE_API_KEY → brave.key 600 + bloco rc, probe de prefixo npm corrigido)</td></tr>
+<tr><td>04-agent-tools/install.ps1</td><td>Mesmo fluxo em PowerShell nativo (junction primeiro + cópia fallback, env var do usuário)</td></tr>
+<tr><td>04-agent-tools/README.md</td><td>Reescrito: "GitCraque + deep-orchestrator" — docs do skill (instala, configura, usa, MODO CONTIDO, busca 3-tier)</td></tr>
+<tr><td>README.md</td><td>Stop 4 reescrito ("the agent orchestrates itself"); loop, tabelas, verify, commands, where-everything-lands, uninstall, troubleshooting, credits, before-you-install; seção Ghostty restaurada com precisão (confirm-close-surface)</td></tr>
+<tr><td>03-deepclaude/README.md</td><td>Linha final: ponte surf-* → ponte do deep-orchestrator</td></tr>
+<tr><td>install.sh</td><td>Banner final: linha surf-free-skill removida</td></tr>
+</tbody></table>
+<h3>Fora do repo (pasta da aula — não versionada)</h3>
+<table class="table table-sm"><thead><tr><th>Arquivo</th><th>Mudança</th></tr></thead><tbody>
+<tr><td>instaladores/README.md</td><td>4 instaladores; fluxo com /deep-orchestrator (MODO CONTIDO); "o que fica na máquina"; busca (wizard Brave)</td></tr>
+<tr><td>instaladores/04-agent-tools/</td><td>NOVO — cópia idêntica do instalador 04 do repo (diff -r vazio)</td></tr>
+</tbody></table>
+
+      <h2 class="h4 pane-title mt-4">Commits (squash)</h2>
+      <p>Histórico final do branch principal: um commit squash por sub-agente. Nenhuma worktree ou branch <code>wt/*</code> sobra ao final.</p>
+
+<h3>Commits (squash, um por sub-tarefa)</h3>
+<ul>
+<li><code>65a048d</code> onda1-docs-repo: docs — remove surf-skill, adiciona deep-orchestrator (README raiz, 04, 03)</li>
+<li><code>72f174b</code> onda1-instalador-04: instalador 04 — remove surf-skill, adiciona deep-orchestrator (install+config Brave) e GitCraque sem Node</li>
+<li><code>d6397ee</code> onda2-fix-docs-04: mensagem GitCraque precisa + wording ponte Windows (junction)</li>
+<li><code>bc0397a</code> onda2-fix-banner: remove resíduo surf-free-skill do banner do launcher</li>
+</ul>
+    </div>
+
+    <!-- ══════════════ ABA 4 · DE-PARA (BEFORE/AFTER) ══════════════ -->
+    <div class="tab-pane fade" id="pane-depara" role="tabpanel"
+         aria-labelledby="tab-depara" tabindex="0" data-print-title="De-Para">
+      <h2 class="h4 pane-title">De-Para: o que mudou</h2>
+      <p>Comparação lado a lado entre o estado inicial do repositório e o estado final após a execução.</p>
+
+<h3>De-para</h3>
+<table class="table table-sm"><thead><tr><th>Antes</th><th>Depois</th></tr></thead><tbody>
+<tr><td>04-agent-tools instala <code>surf-skill</code> via npm (Tier 1 de pesquisa do agente) + GitCraque</td><td>04-agent-tools instala <b>GitCraque</b> + a skill <b>deep-orchestrator</b> (orquestrador autônomo multi-agente) — Node virou opcional (GitCraque >= 22.13)</td></tr>
+<tr><td>Ponte manual das 3 skills surf-* para ~/.claude-deepseek/skills</td><td>Skill deep-orchestrator ponteada (symlink/junction/cópia) para ~/.claude/skills E ~/.claude-deepseek/skills; resíduos surf-* da ponte antiga removidos só se symlink</td></tr>
+<tr><td>Wizard de chaves do surf (Tavily/Parallel/Brave/OpenRouter)</td><td>Wizard da chave <b>Brave Search API</b> (validação HTTP 200 ao vivo) → ~/.config/aula-dev/brave.key (600) + bloco rc <code>BRAVE_API_KEY</code> idempotente que preserva export prévio</td></tr>
+<tr><td>README raiz: "Stop 4 — the agent stops guessing (surf-skill)"</td><td>"Stop 4 — the agent orchestrates itself (deep-orchestrator)": ondas, worktrees nomeadas, squash-merge com gate, MODO CONTIDO com qwe, busca 3-tier (Tier 2 Brave / Tier 3 DDG keyless)</td></tr>
+<tr><td>Banner do launcher anuncia <code>surf-free-skill</code></td><td>Linha removida (resíduo do produto)</td></tr>
+<tr><td>Instruções da aula: 3 instaladores, sem skill de agente</td><td>4 instaladores + fluxo com <code>/deep-orchestrator</code>; cópia do 04-agent-tools na pasta da aula</td></tr>
+</tbody></table>
+
+      <h2 class="h4 pane-title">Impacto</h2>
+      <p>O que cada mudança significa para quem usa o deep-orchestrator:</p>
+      <!-- IMPACT begin (não preenchido — conteúdo demo do template) -->
+      <div class="list-group list-group-flush mb-4">
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-stars fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Impacto 1</strong> — descrição genérica, substituída na geração.</div>
+        </div>
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-stars fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Impacto 2</strong> — descrição genérica, substituída na geração.</div>
+        </div>
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-stars fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Impacto 3</strong> — descrição genérica, substituída na geração.</div>
+        </div>
+      </div>
+      <p class="text-body-secondary small">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pelos impactos reais.</p>
+      <!-- IMPACT end (não preenchido — conteúdo demo do template) -->
+
+      <h2 class="h4 pane-title">Novas capacidades</h2>
+<h3>O que a aula ganha</h3>
+<ul>
+<li><code>/deep-orchestrator &lt;tarefa&gt;</code> — orquestração autônoma multi-agente (ondas, worktrees nomeadas, sub-agentes, revisão adversarial, squash-merge com gate, commit sem perguntar)</li>
+<li>MODO CONTIDO: invocação dentro de worktree <code>qwe</code> integra no branch da worktree, nunca em main/master</li>
+<li>Busca: Tier 2 Brave (chave opcional do wizard) ou Tier 3 DuckDuckGo keyless — degradação funcional, sem hard blocker</li>
+<li>GitCraque mantido (leitura do histórico em grafo, sem Electron)</li>
+</ul>
+    </div>
+
+    <!-- ══════════════ ABA 5 · DECISÕES AUTÔNOMAS ══════════════ -->
+    <div class="tab-pane fade" id="pane-decisoes" role="tabpanel"
+         aria-labelledby="tab-decisoes" tabindex="0" data-print-title="Decisões autônomas">
+      <h2 class="h4 pane-title">Premissas inferidas sem perguntar</h2>
+      <p>O orquestrador opera em autonomia total — nenhuma pergunta é feita ao usuário. Toda premissa assumida fica registrada aqui — para revisão e reprodutibilidade.</p>
+
+<h3>Decisões tomadas autonomamente</h3>
+<ul>
+<li><b>Fronteira:</b> a pasta da aula (/home/ondokai/Documents/Aulas/aula-001-multi-work/) é alvo explícito da tarefa — exceção autorizada à contenção, apenas nos paths listados.</li>
+<li><b>Node opcional no 04:</b> docs e instalador estavam contraditórios (docs prometiam "instala sem Node"; instalador abortava). Resolvido a favor das docs: Node ausente → GitCraque pulado com warning, skill instala mesmo assim.</li>
+<li><b>Gate de auditoria refinada:</b> "grep surf vazio" interpretado como referências ao PRODUTO (surf-skill|surf-*), não à substring "surf" — "surface"/"confirm-close-surface" do Ghostty são legítimos (fix de precisão na seção Ghostty do README raiz).</li>
+<li><b>"MIT" do deep-orchestrator:</b> mantido como declarado no README do próprio projeto ("Licença: MIT"); ausência de arquivo LICENSE no repo da skill é housekeeping upstream (SKILL_HOME somente leitura) — registrado, sem fix.</li>
+<li><b>Falso positivo do REPLAN rejeitado:</b> o diretório .deep-orchestrator/ no repo é o estado da própria execução (excluído por pathspec, removido no COMMIT-FINAL) — não foi apagado.</li>
+<li><b>Entrega da aula fora do git:</b> a pasta da aula não é repositório; a sub-tarefa onda2-docs-aula não produz squash no repo — merge no-op tratado e documentado.</li>
+<li><b>Fix do banner:</b> resíduo surf-free-skill no launcher foi corrigido mesmo com o REPLAN o tendo racionalizado como "produto diferente" (é skill do pacote npm surf-skill removido).</li>
+</ul>
+    </div>
+
+    <!-- ══════════════ ABA 6 · TIMELINE ══════════════ -->
+    <div class="tab-pane fade" id="pane-timeline" role="tabpanel"
+         aria-labelledby="tab-timeline" tabindex="0" data-print-title="Timeline">
+      <h2 class="h4 pane-title">Linha do tempo da execução</h2>
+      <p>As quatro fases do orquestrador e o que aconteceu em cada uma.</p>
+
+      <!-- TIMELINE begin (não preenchido — conteúdo demo do template) -->
+      <ol class="timeline list-unstyled mb-0">
+        <li class="timeline-item mb-4">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="badge badge-accent">Fase 1</span>
+            <strong>ANALYZE</strong>
+          </div>
+          <p class="mb-0 text-body-secondary small">Leitura do prompt, mapeamento do repositório, classificação greenfield/brownfield.</p>
+        </li>
+        <li class="timeline-item mb-4">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="badge badge-accent">Fase 2</span>
+            <strong>PLAN</strong>
+          </div>
+          <p class="mb-0 text-body-secondary small">Decomposição em sub-tarefas atômicas, ondas topológicas, mapa de propriedade de arquivos, TASK_PLAN.md publicado.</p>
+        </li>
+        <li class="timeline-item mb-4">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="badge badge-accent">Fase 3</span>
+            <strong>EXECUTE-ONDA</strong>
+          </div>
+          <p class="mb-0 text-body-secondary small">Onda 1 — scripts + prompts · Onda 2 — templates/ + SKILL.md. Worktrees nomeadas, barreira, revisão adversarial, squash-merge com gate, limpeza.</p>
+        </li>
+        <li class="timeline-item">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="badge badge-ok">Fase 4</span>
+            <strong>COMMIT-FINAL</strong>
+          </div>
+          <p class="mb-0 text-body-secondary small">TASK_PLAN.md removido, gate completo, commit final, varredura de limpeza, EXPLAINER.html gerado (este documento).</p>
+        </li>
+      </ol>
+      <p class="text-body-secondary small mt-3">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pela timeline real da execução.</p>
+      <!-- TIMELINE end (não preenchido — conteúdo demo do template) -->
+    </div>
+
+  </div>
+
+  <footer class="text-body-secondary small border-top mt-5 pt-3">
+    Gerado por <strong>deep-orchestrator</strong> v1.0.0 · 2026-08-18 · branch main.
+    Documento de arquivo único — salve, abra com duplo clique ou imprima em PDF (todas as abas entram no papel).
+  </footer>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
+        integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU"
+        crossorigin="anonymous"></script>
+
+<script>
+/* ── runtime do documento ────────────────────────────────────────────────────
+   Copie este bloco inteiro, sem editar. Ele faz três coisas:
+   1. guarda o código-fonte cru ANTES de qualquer transformação (para o copiar);
+   2. destaca a sintaxe e injeta o botão de copiar;
+   3. liga as abas ao #hash da URL, nos dois sentidos.
+   ────────────────────────────────────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  // 1. Fonte cru primeiro. Depois do highlight o DOM ganha <span>; textContent ainda
+  //    devolve o texto certo, mas plugins de numeração de linha o contaminam. Guardar
+  //    antes é a única versão que nunca mente.
+  var sources = new WeakMap();
+  document.querySelectorAll('pre > code').forEach(function (code) {
+    sources.set(code, code.textContent.replace(/\n$/, ''));
+  });
+
+  // 2. Highlight. Declare sempre a linguagem na classe: a auto-detecção erra em
+  //    trechos curtos (o mesmo snippet vira "ruby" numa aba e "perl" na outra).
+  if (window.hljs) hljs.highlightAll();
+
+  // Copiar. navigator.clipboard exige contexto seguro; em file:// o comportamento
+  // varia por navegador, então o fallback com execCommand não é opcional.
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text).then(function () { return true; },
+                                                      function () { return legacyCopy(text); });
+    }
+    return Promise.resolve(legacyCopy(text));
+  }
+
+  function legacyCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    // position:fixed + opacity:0 evita que a página role até o textarea.
+    ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length); // iOS ignora select() sozinho
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  document.querySelectorAll('pre > code').forEach(function (code) {
+    var pre = code.parentElement;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm btn-outline-secondary copy-btn';
+    btn.innerHTML = '<i class="bi bi-clipboard"></i>';
+    btn.setAttribute('aria-label', 'Copiar código');
+    btn.addEventListener('click', function () {
+      copyText(sources.get(code) || code.textContent).then(function (ok) {
+        btn.innerHTML = ok ? '<i class="bi bi-check-lg"></i>' : '<i class="bi bi-x-lg"></i>';
+        btn.classList.toggle('btn-outline-success', ok);
+        btn.classList.toggle('btn-outline-danger', !ok);
+        btn.classList.remove('btn-outline-secondary');
+        setTimeout(function () {
+          btn.innerHTML = '<i class="bi bi-clipboard"></i>';
+          btn.className = 'btn btn-sm btn-outline-secondary copy-btn';
+        }, 1500);
+      });
+    });
+    pre.appendChild(btn);
+  });
+
+  // 3. Aba ↔ URL. Sem isto, mandar "olha a aba De-Para" exige explicar o clique.
+  var tabs = document.querySelectorAll('[data-bs-toggle="tab"]');
+  if (!tabs.length) return;
+
+  function activateFromHash() {
+    var hash = window.location.hash;
+    if (!hash || hash.length < 2) return;
+    var target = document.querySelector(hash);
+    if (!target) return;
+    // O #hash pode apontar para o painel OU para um título dentro dele.
+    var pane = target.closest('.tab-pane') || (target.classList.contains('tab-pane') ? target : null);
+    if (!pane) return;
+    var trigger = document.querySelector('[data-bs-target="#' + CSS.escape(pane.id) + '"]');
+    if (trigger) bootstrap.Tab.getOrCreateInstance(trigger).show();
+    // O navegador já tentou rolar até o alvo — e falhou, porque naquele instante o
+    // painel ainda era display:none. Agora que apareceu, role de novo: sem isto a
+    // página abre num scroll intermediário, com as abas escondidas atrás da navbar.
+    var scrollTo = target !== pane ? target : (trigger && trigger.closest('[role="tablist"]')) || pane;
+    requestAnimationFrame(function () { scrollTo.scrollIntoView({ block: 'start' }); });
+  }
+
+  tabs.forEach(function (t) {
+    t.addEventListener('shown.bs.tab', function (e) {
+      var id = (e.target.getAttribute('data-bs-target') || '').slice(1);
+      // replaceState, não location.hash: mudar o hash direto faz a página pular.
+      if (id) history.replaceState(null, '', '#' + id);
+    });
+  });
+
+  window.addEventListener('hashchange', activateFromHash);
+  activateFromHash();
+})();
+</script>
+</body>
+</html>
