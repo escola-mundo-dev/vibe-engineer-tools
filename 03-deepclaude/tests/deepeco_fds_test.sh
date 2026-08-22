@@ -11,7 +11,11 @@
 #   de rede. Apenas bash + coreutils + grep + python3 (opcional, só para o
 #   check de alinhamento da tabela — SKIP se ausente) + od (BOM).
 #
-#   Exit 0 apenas se TODOS os casos passarem; caso contrário exit 1.
+#   Exit 0 quando FAIL==0 (independente de SKIP). O case11 pode "SKIP" quando
+#   python3 está ausente (Git Bash no Windows comum) — SKIP não é falha; com
+#   python3 presente, case11 roda e deve PASSAR. São 15 resultados no total:
+#   14 regulares que precisam passar + case14 (com 2 asserts no mesmo caso);
+#   sem python3 são 14 pass + 1 skip — exit 0.
 set -uo pipefail
 
 # ── Localização do deepeco (relativo a este script) ─────────────────────────
@@ -21,6 +25,7 @@ D="$SCRIPT_DIR/../payload/deepeco"
 # ── Contadores ──────────────────────────────────────────────────────────────
 PASS=0
 FAIL=0
+SKIP=0
 
 say()  { printf '%s\n' "$*"; }
 
@@ -34,11 +39,15 @@ run_now() {
 }
 
 # Registra o resultado de um caso.
-#   result <nome> <ok(0|1)> <mensagem>
+#   result <nome> <ok(0|1|2)> <mensagem>
+#   0 = PASS · 1 = FAIL · 2 = SKIP (não conta como falha; exit final só olha FAIL)
 result() {
   local nome="$1" ok="$2" msg="$3"
   if [ "$ok" = "0" ]; then
     PASS=$((PASS + 1)); say "PASS  $nome"
+  elif [ "$ok" = "2" ]; then
+    SKIP=$((SKIP + 1)); say "SKIP  $nome"
+    say "      $msg"
   else
     FAIL=$((FAIL + 1)); say "FAIL  $nome"
     say "      $msg"
@@ -182,7 +191,8 @@ else:
     CASE11=fail
   fi
 else
-  result "case11_tabela_fds_alinhada" 2 "SKIP: python3 ausente"
+  say "SKIP: case11 (python3 ausente)"
+  result "case11_tabela_fds_alinhada" 2 "python3 ausente — case11 não rodou (SKIP não é falha)"
 fi
 
 # CASO 12 — BOM do .ps1 espelho (deepeco.ps1): garante PS 5.1 UTF-8.
@@ -212,9 +222,39 @@ else
   result "case13_flag_desconhecida_erro" 1 "flag desconhecida saiu 0 (esperava != 0)"
 fi
 
+# ─────────────────────────────────────────────────────────────────────────────
+# CASO 14 — janelas customizadas sob FDS. Conf com ECO_ATIVO=1 e uma janela de
+# pico custom (02:00-05:00 07:00-11:00 UTC), em que p_ini[0]=02:00 UTC = 10:00
+# Pequim. No FDS, o rótulo do "próximo pico" e o HORÁRIO DE PICO do dia útil
+# devem seguir o conf custom — não o default hardcoded 01:00/09:00.
+# ─────────────────────────────────────────────────────────────────────────────
+tmpwin="$(mktemp -d)"
+printf 'ECO_ATIVO="1"\nECO_PICOS_UTC="02:00-05:00 07:00-11:00"\n' > "$tmpwin/conf"
+# Assert 1 — dom 2026-08-30 07:00 UTC (pós-vig, FDS): status deve derivar o
+# primeiro pico da próxima semana de p_ini[0] do conf custom (02:00 UTC).
+OUT="$(DEEPECO_CONF="$tmpwin/conf" DEEPECO_NOW="2026-08-30 07:00" "$D" --short 2>&1)"
+ok=0; msg=""
+if ! printf '%s' "$OUT" | grep -q "ECONOMIA o DIA TODO"; then ok=1; msg="sem 'ECONOMIA o DIA TODO'"; fi
+if ! printf '%s' "$OUT" | grep -q "10:00 Pequim (= 02:00 UTC"; then ok=1; msg="$msg | falta '10:00 Pequim (= 02:00 UTC' (próximo-pico deve vir de p_ini[0] do conf custom)"; fi
+[ "$ok" = "1" ] && msg="$msg | head: $(printf '%s\n' "$OUT" | head -n1)"
+result "case14_fds_custom_windows" "$ok" "$msg"
+# Assert 2 — seg 2026-08-31 07:00 UTC (dia útil Pequim 15:00): dentro da janela
+# custom 07:00-11:00 UTC → pico (prova que o pico do dia útil segue o conf
+# custom também e o FDS não vazou).
+if [ "$ok" = "0" ]; then
+  OUT="$(DEEPECO_CONF="$tmpwin/conf" DEEPECO_NOW="2026-08-31 07:00" "$D" --short 2>&1)"
+  if printf '%s' "$OUT" | grep -q "HORÁRIO DE PICO"; then
+    say "      + assert2: dia útil segue conf custom (HORÁRIO DE PICO em 07:00-11:00 UTC)"
+  else
+    FAIL=$((FAIL + 1)); say "FAIL  case14_fds_custom_windows"
+    say "      + assert2: esperava 'HORÁRIO DE PICO' (seg, janela custom 07:00-11:00 UTC); obtido: $(printf '%s\n' "$OUT" | head -n1)"
+  fi
+fi
+rm -rf "$tmpwin"
+
 # ── Resumo ───────────────────────────────────────────────────────────────────
 say
 say "══════════════════════════════════════════"
-say "RESULTADO: $PASS passou, $FAIL falhou (case11=$CASE11)"
+say "RESULTADO: $PASS passou, $FAIL falhou, $SKIP ignorado (case11=$CASE11)"
 say "══════════════════════════════════════════"
 [ "$FAIL" -eq 0 ]
