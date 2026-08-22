@@ -154,17 +154,18 @@ ate_economia=$(( ( fim_pico - now_utc + 1440 ) % 1440 ))
 
 # ── Fim de semana (regra nova): ECONOMIA o DIA TODO; picos não valem ────────
 # Ativo = ECO_FDS_ECO_DIA_INTEIRO=1 E now_abs >= vig_utc_min E bj_dow ∈ {6,7}.
-# "Próximo pico" nesse caso = primeiro pico da próxima segunda de Pequim
-# (01:00 UTC dessa segunda = 09:00 Pequim). Âncoras: sáb 2026-08-29 07:00Z → 42h;
-# dom 2026-08-30 07:00Z → 18h.
+# "Próximo pico" nesse caso = o INÍCIO da PRIMEIRA janela de pico configurada
+# (p_ini[0]) na próxima segunda de Pequim — derivado de ECO_PICOS_UTC, não
+# hardcoded. Com as janelas padrão (01:00-04:00) p_ini[0]=60 → mesma saída de
+# antes. Âncoras: sáb 2026-08-29 07:00Z → 42h; dom 2026-08-30 07:00Z → 18h.
 fds_ativo=0
 if [ "${ECO_FDS_ECO_DIA_INTEIRO:-1}" = "1" ] && [ "$now_abs" -ge "$vig_utc_min" ] \
    && { [ "$bj_dow" = "6" ] || [ "$bj_dow" = "7" ]; }; then
   fds_ativo=1
   em_pico=0
   dias_ate_seg=$(( ( 8 - bj_dow ) % 7 ))          # sáb=2, dom=1
-  prox_pico_ini=60                                # 01:00 UTC da segunda
-  prox_pico_delta=$(( ( bj_day_abs + dias_ate_seg )*1440 + 60 - now_abs ))
+  prox_pico_ini=${p_ini[0]}                       # início da 1ª janela de pico (UTC)
+  prox_pico_delta=$(( ( bj_day_abs + dias_ate_seg )*1440 + prox_pico_ini - now_abs ))
 fi
 
 # Economia = os intervalos ENTRE os picos (fim de um → início do próximo,
@@ -179,16 +180,16 @@ done
 
 # ── Tabela de horários e valores (bordas finas, mesmo traço do banner) ──────
 _rep() { printf '%*s' "$1" '' | sed 's/ /─/g'; }
-_wmax() { local LC_ALL=C m=0 s; for s in "$@"; do [ "${#s}" -gt "$m" ] && m=${#s}; done; printf '%d' "$m"; }
+_wmax() { local m=0 s; for s in "$@"; do [ "${#s}" -gt "$m" ] && m=${#s}; done; printf '%d' "$m"; }
 
 _tabela() {
-  # Células 100% ASCII fora do rótulo de fim de semana (mb-UTF-8). Sob LC_ALL=C
-  # dentro deste escopo, `_wmax` (${#s}) e o `printf %-*s` contam BYTES, então a
-  # célula multibyte alinha na mesma posição que as ASCII (byte = largura real).
-  local LC_ALL=C m_eco="  " m_pico="  "
+  # Células 100% ASCII: `${#s}` conta chars == bytes, e `printf %-*s` alinha por
+  # bytes — então a largura da coluna é correta em QUALQUER locale. Basta manter
+  # cada célula em ASCII puro (byte = char). A explicação de "fim de semana → não
+  # há pico" vive na linha de status (que não é tabela e pode ter acentos).
+  local m_eco="  " m_pico="  "
   if [ "$em_pico" = "1" ]; then m_pico="> "; else m_eco="> "; fi
   local r2lbl="${m_pico}pico (2x)"
-  [ "$fds_ativo" = "1" ] && r2lbl="${m_pico}pico (não vale hoje — fim de semana)"
   local h1="faixa"            r1c1="${m_eco}economia" r2c1="$r2lbl"
   local h2="horario ($tz_label)" r1c2="$eco_loc_str"  r2c2="$picos_loc_str"
   local h3="v4-flash (hit/miss/out)" r1c3="$ECO_PRECO_FLASH_ECONOMIA" r2c3="$ECO_PRECO_FLASH_PICO"
@@ -206,7 +207,9 @@ _tabela() {
 
 _status_curto() {
   if [ "$fds_ativo" = "1" ]; then
-    echo "💰 deepeco: ECONOMIA o DIA TODO (fim de semana — fuso de Pequim); primeiro pico da próxima semana: segunda 09:00 Pequim (= 01:00 UTC = $(_local 60) $tz_label)"
+    pico_bj=$(( ( prox_pico_ini + 480 ) % 1440 ))                       # horário de Pequim
+    pico_local=$(_local "$prox_pico_ini")
+    echo "💰 deepeco: ECONOMIA o DIA TODO (fim de semana — fuso de Pequim); primeiro pico da próxima semana (segunda de Pequim): $(_hhmm "$pico_bj") Pequim (= $(_hhmm "$prox_pico_ini") UTC = $pico_local $tz_label)"
   elif [ "$em_pico" = "1" ]; then
     echo "⏰ deepeco: HORÁRIO DE PICO (preço 2×) — a economia volta às $(_local "$fim_pico") $tz_label (daqui a $(_dur "$ate_economia"))"
   else

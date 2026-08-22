@@ -141,16 +141,17 @@ $ecoLocStr   = $ecoLoc   -join ' e '
 
 # ── fim de semana (regra nova): ECONOMIA o DIA TODO; picos não valem ────────
 # Ativo = ECO_FDS_ECO_DIA_INTEIRO=1 E nowAbs >= vigUtcMin E bjDow ∈ {6,7}.
-# "Próximo pico" nesse caso = primeiro pico da próxima segunda de Pequim
-# (01:00 UTC dessa segunda = 09:00 Pequim). Âncoras: sáb 2026-08-29 07:00Z →
-# 42h; dom 2026-08-30 07:00Z → 18h.
+# "Próximo pico" nesse caso = o INÍCIO da PRIMEIRA janela de pico configurada
+# ($pIni[0]) na próxima segunda de Pequim — derivado de ECO_PICOS_UTC, não
+# hardcoded. Com as janelas padrão (01:00-04:00) $pIni[0]=60 → mesma saída.
+# Âncoras: sáb 2026-08-29 07:00Z → 42h; dom 2026-08-30 07:00Z → 18h.
 $fdsAtivo = $false
 if ($conf.ECO_FDS_ECO_DIA_INTEIRO -eq '1' -and $nowAbs -ge $vigUtcMin -and ($bjDow -eq 6 -or $bjDow -eq 7)) {
     $fdsAtivo = $true
     $emPico = $false
     $diasAteSeg = (8 - $bjDow) % 7                       # sáb=2, dom=1
-    $proxPicoIni = 60                                    # 01:00 UTC da segunda
-    $proxPicoDelta = [int](($bjDayAbs + $diasAteSeg) * 1440 + 60 - $nowAbs)
+    $proxPicoIni = [int]$pIni[0]                         # início da 1ª janela de pico (UTC)
+    $proxPicoDelta = [int](($bjDayAbs + $diasAteSeg) * 1440 + $proxPicoIni - $nowAbs)
 }
 
 # ── tabela de horários e valores (células ASCII: PadRight alinha por char) ──
@@ -158,7 +159,6 @@ function Show-Tabela {
     $mEco = '  '; $mPico = '  '
     if ($emPico) { $mPico = '> ' } else { $mEco = '> ' }
     $r2lbl = "${mPico}pico (2x)"
-    if ($fdsAtivo) { $r2lbl = "${mPico}pico (não vale hoje — fim de semana)" }
     $c1 = @('faixa', "${mEco}economia", $r2lbl)
     $c2 = @("horario ($tzLabel)", $ecoLocStr, $picosLocStr)
     $c3 = @('v4-flash (hit/miss/out)', $conf.ECO_PRECO_FLASH_ECONOMIA, $conf.ECO_PRECO_FLASH_PICO)
@@ -177,7 +177,9 @@ function Show-Tabela {
 
 function Show-StatusCurto {
     if ($fdsAtivo) {
-        Write-Host "[eco] deepeco: ECONOMIA o DIA TODO (fim de semana — fuso de Pequim); primeiro pico da próxima semana: segunda 09:00 Pequim (= 01:00 UTC = $(ToLocal 60) $tzLabel)"
+        $picoBj = ($proxPicoIni + 480) % 1440            # horário de Pequim
+        $picoLocal = ToLocal $proxPicoIni
+        Write-Host "[eco] deepeco: ECONOMIA o DIA TODO (fim de semana — fuso de Pequim); primeiro pico da próxima semana (segunda de Pequim): $(ToHHMM $picoBj) Pequim (= $(ToHHMM $proxPicoIni) UTC = $picoLocal $tzLabel)"
     } elseif ($emPico) {
         Write-Host "[pico] deepeco: HORÁRIO DE PICO (preço 2x) — a economia volta às $(ToLocal $fimPico) $tzLabel (daqui a $(Dur $ateEconomia))"
     } else {
