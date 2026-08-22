@@ -234,7 +234,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-robot fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">9</div>
+              <div class="display-6 fw-bold stat-value">10</div>
               <div class="text-body-secondary small">Sub-agentes</div>
             </div>
           </div>
@@ -243,7 +243,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-git-commit fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">3</div>
+              <div class="display-6 fw-bold stat-value">5</div>
               <div class="text-body-secondary small">Commits (squash)</div>
             </div>
           </div>
@@ -297,7 +297,7 @@
 <tr><td>1 — Pesquisa</td><td>— (somente leitura)</td><td>Corroboração web multi-fonte da regra nova; ressalva documentada (cláusula de fim de semana confirmada só na fonte primária oficial EN/ZH)</td><td>Confirmada nas fontes oficiais; picos/fuso/16-08 corroborados por trackers independentes</td></tr>
 <tr><td>2 — Implementação</td><td>onda2-deepeco-fds</td><td>Regra de fim de semana no deepeco (bash+PS+conf+eco.md+2 READMEs): economia dia todo em sáb/dom de Pequim pós-vigência; default ON; hook DEEPECO_NOW; ressalvas nas docs</td><td>Squash 5269197 · gate 16/16</td></tr>
 <tr><td>2 — Fix (achados adversariais)</td><td>onda2-fix-tabela</td><td>Tabela 100% ASCII (alinhamento em qualquer locale); próximo-pico derivado de ECO_PICOS_UTC (sem hardcode); BOM do .ps1 preservado</td><td>Squash d9538ae · gate 17/17</td></tr>
-<tr><td>Subwave — Testes</td><td>test-onda2-deepeco-fds</td><td>Suíte autocontida de 14 casos (DEEPECO_NOW): regra fds, conf antigo, opt-out, alinhamento, BOM</td><td>Squash 285f57e · 14/14 verdes (detectou o bug de alinhamento pré-fix)</td></tr>
+<tr><td>Subwave — Testes</td><td>test-onda2-deepeco-fds</td><td>Suíte autocontida de 15 casos (DEEPECO_NOW): regra fds, conf antigo, opt-out, alinhamento, BOM, janelas customizadas, SKIP real sem python3</td><td>Squash 285f57e+08f23df · 15/15 verdes (detectou o bug de alinhamento pré-fix; SKIP sem python3 = exit 0)</td></tr>
 <tr><td>Subwave — Validação</td><td>val-onda2-gate</td><td>Gate completo no estado integrado (build/lint/testes/BOM/alinhamento) + revisor do diff integrado</td><td>PASS em todas as etapas; revisor: WARNING → fix aplicado</td></tr>
 </table>
 
@@ -362,7 +362,7 @@
 <li>Vigência configurável (ECO_FDS_VIGENCIA): pré-vigência = regra antiga, pós = economia no fds</li>
 <li>Status e tabela corretos em qualquer fuso local (relógio UTC do servidor → conversão automática)</li>
 <li>Próximo pico no fds derivado das janelas configuradas (não hardcoded)</li>
-<li>DEEPECO_NOW (UTC) para teste/preview sem faketime; suíte de 14 casos de regressão</li>
+<li>DEEPECO_NOW (UTC) para teste/preview sem faketime; suíte de 15 casos de regressão (portátil: SKIP real sem python3)</li>
 </ul>
     </div>
 
