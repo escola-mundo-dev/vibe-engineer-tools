@@ -7,7 +7,7 @@
 <!-- Diz ao navegador que a página é escura ANTES do CSS carregar: sem flash
      branco, e os controles nativos (scrollbar, select, input) já nascem escuros. -->
 <meta name="color-scheme" content="dark">
-<title>EXPLAINER — deep-orchestrator · de-para da execução</title>
+<title>EXPLAINER — deep-orchestrator-agent-skill · de-para da execução</title>
 
 <link rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
@@ -23,7 +23,7 @@
       crossorigin="anonymous">
 
 <style>
-  /* ── Paleta do deep-orchestrator ──────────────────────────────────────────
+  /* ── Paleta do deep-orchestrator-agent-skill ──────────────────────────────────────────
      Fundo #1a1a2e, accent #00d4ff (ciano), sucesso #00ff88, warning #ffaa00.
      Tudo deriva destas variáveis — não cravamos hex no conteúdo. */
   :root {
@@ -143,8 +143,8 @@
 
 <nav class="navbar navbar-expand-lg sticky-top bg-body-tertiary">
   <div class="container">
-    <span class="navbar-brand fw-semibold"><i class="bi bi-diagram-3 brand-accent me-2"></i>deep-orchestrator <span class="text-body-secondary fw-normal">· EXPLAINER</span></span>
-    <span class="navbar-text small text-body-secondary d-none d-md-inline">v1.0.0 · 2026-08-18</span>
+    <span class="navbar-brand fw-semibold"><i class="bi bi-diagram-3 brand-accent me-2"></i>deep-orchestrator-agent-skill <span class="text-body-secondary fw-normal">· EXPLAINER</span></span>
+    <span class="navbar-text small text-body-secondary d-none d-md-inline">vv3.4.1 · 2026-08-22</span>
   </div>
 </nav>
 
@@ -153,10 +153,10 @@
   <header class="explainer-hero rounded-4 p-4 p-md-5 mb-4">
     <span class="badge badge-accent mb-3"><i class="bi bi-clipboard-data me-1"></i>Relatório de execução</span>
     <h1 class="display-6 fw-semibold text-white mb-2">O que aconteceu nesta execução</h1>
-    <p class="lead text-white-50 mb-3">Remover surf-skill do instalador 04 e das instruções; adicionar e configurar a skill deep-orchestrator (principal agent skill da aula)</p>
+    <p class="lead text-white-50 mb-3">Análise do email DeepSeek (fim de semana = off-peak dia todo desde 2026-08-23 00:00 Pequim) + pesquisa web de confirmação + ajuste do peak-time do deepeco (bash/PS/conf/eco.md/docs) com suíte de testes</p>
     <div class="d-flex flex-wrap gap-2">
-      <span class="badge badge-accent">v1.0.0</span>
-      <span class="badge badge-soft"><i class="bi bi-calendar3 me-1"></i>2026-08-18</span>
+      <span class="badge badge-accent">vv3.4.1</span>
+      <span class="badge badge-soft"><i class="bi bi-calendar3 me-1"></i>2026-08-22</span>
       <span class="badge badge-soft"><i class="bi bi-git-branch me-1"></i>main</span>
     </div>
   </header>
@@ -213,11 +213,11 @@
     <div class="tab-pane fade show active" id="pane-visao" role="tabpanel"
          aria-labelledby="tab-visao" tabindex="0" data-print-title="Visão geral">
       <h2 class="h4 pane-title">Resumo da execução</h2>
-      <p class="text-body-secondary">Remover surf-skill do instalador 04 e das instruções; adicionar e configurar a skill deep-orchestrator (principal agent skill da aula)</p>
+      <p class="text-body-secondary">Análise do email DeepSeek (fim de semana = off-peak dia todo desde 2026-08-23 00:00 Pequim) + pesquisa web de confirmação + ajuste do peak-time do deepeco (bash/PS/conf/eco.md/docs) com suíte de testes</p>
 
       <div class="alert alert-primary d-flex gap-2" role="alert">
         <i class="bi bi-info-circle-fill flex-shrink-0"></i>
-        <div><strong>O que é este documento:</strong> o EXPLAINER gerado pelo deep-orchestrator na fase COMMIT-FINAL, ao fim de cada execução. Mostra o de-para (antes/depois) de tudo que foi feito: ondas, worktrees, arquivos modificados, decisões autônomas e timeline.</div>
+        <div><strong>O que é este documento:</strong> o EXPLAINER gerado pelo deep-orchestrator-agent-skill na fase COMMIT-FINAL, ao fim de cada execução. Mostra o de-para (antes/depois) de tudo que foi feito: ondas, worktrees, arquivos modificados, decisões autônomas e timeline.</div>
       </div>
 
       <div class="row g-3">
@@ -225,7 +225,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-layers fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">2</div>
+              <div class="display-6 fw-bold stat-value">3</div>
               <div class="text-body-secondary small">Ondas executadas</div>
             </div>
           </div>
@@ -234,7 +234,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-robot fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">11</div>
+              <div class="display-6 fw-bold stat-value">9</div>
               <div class="text-body-secondary small">Sub-agentes</div>
             </div>
           </div>
@@ -243,7 +243,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-git-commit fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">4</div>
+              <div class="display-6 fw-bold stat-value">3</div>
               <div class="text-body-secondary small">Commits (squash)</div>
             </div>
           </div>
@@ -254,7 +254,7 @@
       <p>O orquestrador, na fase COMMIT-FINAL, gera o explainer a partir deste template:</p>
 <pre><code class="language-bash"># Gera o explainer a partir do template
 ./scripts/generate-explainer.sh &gt; EXPLAINER.html
-# Ou preenche manualmente os placeholders 1.0.0, 2026-08-18, main, ...</code></pre>
+# Ou preenche manualmente os placeholders v3.4.1, 2026-08-22, main, ...</code></pre>
       <p class="text-body-secondary small">O template é <code>templates/html-explainer.html</code> — arquivo único, sem build: abre por file:// e imprime em PDF com todas as abas.</p>
 
       <details class="mt-4">
@@ -292,17 +292,14 @@
       <h2 class="h4 pane-title">Ondas executadas</h2>
       <p>Uma linha por sub-agente. Cada sub-agente trabalha numa worktree Git nomeada; a integração é squash-merge um a um, com gate (build + testes) entre merges. Worktrees e branches <code>wt/*</code> são removidos ao fim de cada onda.</p>
 
-<h3>Ondas executadas</h3>
-<table class="table table-sm"><thead><tr><th>Onda</th><th>Worktree</th><th>Tarefa</th><th>Status</th></tr></thead><tbody>
-<tr><td>1</td><td>onda1-instalador-04</td><td>Instalador 04 reescrito: remove surf-skill, adiciona instalação + configuração do deep-orchestrator (GitCraque sem Node)</td><td>Merged · gate verde</td></tr>
-<tr><td>1</td><td>onda1-docs-repo</td><td>READMEs do repo: documentação surf-skill → deep-orchestrator (+ fix de precisão Ghostty)</td><td>Merged · gate verde</td></tr>
-<tr><td>1</td><td>test-onda1-instalador</td><td>Testing subwave: 9/9 pontos do contrato testados em HOME sandbox</td><td>Concluída · sem merge</td></tr>
-<tr><td>1</td><td>val-onda1-gate</td><td>Validation subwave: gate integrado + revisão adversarial do diff</td><td>Concluída · verde</td></tr>
-<tr><td>2</td><td>onda2-docs-aula</td><td>Instruções da aula: README dos instaladores + cópia do 04-agent-tools (entregável fora do git)</td><td>Merged (no-op no repo) · verificado</td></tr>
-<tr><td>2</td><td>onda2-fix-docs-04</td><td>Micro-fix: mensagem GitCraque + wording ponte Windows</td><td>Merged · gate verde</td></tr>
-<tr><td>2</td><td>onda2-fix-banner</td><td>Fix: resíduo surf-free-skill no banner do launcher</td><td>Merged · gate verde</td></tr>
-<tr><td>2</td><td>val-onda2-gate</td><td>Validation subwave do estado integrado final</td><td>Concluída · verde</td></tr>
-</tbody></table>
+<table>
+<tr><th>Onda</th><th>Worktree</th><th>O que entregou</th><th>Resultado</th></tr>
+<tr><td>1 — Pesquisa</td><td>— (somente leitura)</td><td>Corroboração web multi-fonte da regra nova; ressalva documentada (cláusula de fim de semana confirmada só na fonte primária oficial EN/ZH)</td><td>Confirmada nas fontes oficiais; picos/fuso/16-08 corroborados por trackers independentes</td></tr>
+<tr><td>2 — Implementação</td><td>onda2-deepeco-fds</td><td>Regra de fim de semana no deepeco (bash+PS+conf+eco.md+2 READMEs): economia dia todo em sáb/dom de Pequim pós-vigência; default ON; hook DEEPECO_NOW; ressalvas nas docs</td><td>Squash 5269197 · gate 16/16</td></tr>
+<tr><td>2 — Fix (achados adversariais)</td><td>onda2-fix-tabela</td><td>Tabela 100% ASCII (alinhamento em qualquer locale); próximo-pico derivado de ECO_PICOS_UTC (sem hardcode); BOM do .ps1 preservado</td><td>Squash d9538ae · gate 17/17</td></tr>
+<tr><td>Subwave — Testes</td><td>test-onda2-deepeco-fds</td><td>Suíte autocontida de 14 casos (DEEPECO_NOW): regra fds, conf antigo, opt-out, alinhamento, BOM</td><td>Squash 285f57e · 14/14 verdes (detectou o bug de alinhamento pré-fix)</td></tr>
+<tr><td>Subwave — Validação</td><td>val-onda2-gate</td><td>Gate completo no estado integrado (build/lint/testes/BOM/alinhamento) + revisor do diff integrado</td><td>PASS em todas as etapas; revisor: WARNING → fix aplicado</td></tr>
+</table>
 
       <h3 class="h6 mt-4 text-body-secondary">Legenda de status</h3>
       <div class="d-flex flex-wrap gap-2">
@@ -318,30 +315,24 @@
       <h2 class="h4 pane-title">Arquivos modificados</h2>
       <p>Diff stats da execução: <span class="diff-plus">+</span> linhas adicionadas, <span class="diff-minus">−</span> removidas.</p>
 
-<h3>Arquivos modificados (repo)</h3>
-<table class="table table-sm"><thead><tr><th>Arquivo</th><th>Mudança</th></tr></thead><tbody>
-<tr><td>04-agent-tools/install.sh</td><td>Reescrito: surf-skill 100% removido; adiciona GitCraque (Node opcional, >= 22.13) + skill deep-orchestrator (clone ~/.local/share via DEEP_ORCHESTRATOR_SRC, skill em ~/.claude/skills + ponte ~/.claude-deepseek/skills, limpeza de resíduos surf-* só symlink, wizard BRAVE_API_KEY → brave.key 600 + bloco rc, probe de prefixo npm corrigido)</td></tr>
-<tr><td>04-agent-tools/install.ps1</td><td>Mesmo fluxo em PowerShell nativo (junction primeiro + cópia fallback, env var do usuário)</td></tr>
-<tr><td>04-agent-tools/README.md</td><td>Reescrito: "GitCraque + deep-orchestrator" — docs do skill (instala, configura, usa, MODO CONTIDO, busca 3-tier)</td></tr>
-<tr><td>README.md</td><td>Stop 4 reescrito ("the agent orchestrates itself"); loop, tabelas, verify, commands, where-everything-lands, uninstall, troubleshooting, credits, before-you-install; seção Ghostty restaurada com precisão (confirm-close-surface)</td></tr>
-<tr><td>03-deepclaude/README.md</td><td>Linha final: ponte surf-* → ponte do deep-orchestrator</td></tr>
-<tr><td>install.sh</td><td>Banner final: linha surf-free-skill removida</td></tr>
-</tbody></table>
-<h3>Fora do repo (pasta da aula — não versionada)</h3>
-<table class="table table-sm"><thead><tr><th>Arquivo</th><th>Mudança</th></tr></thead><tbody>
-<tr><td>instaladores/README.md</td><td>4 instaladores; fluxo com /deep-orchestrator (MODO CONTIDO); "o que fica na máquina"; busca (wizard Brave)</td></tr>
-<tr><td>instaladores/04-agent-tools/</td><td>NOVO — cópia idêntica do instalador 04 do repo (diff -r vazio)</td></tr>
-</tbody></table>
+<table>
+<tr><th>Arquivo</th><th>Mudança</th></tr>
+<tr><td>03-deepclaude/payload/deepeco</td><td>+Fim de semana (fuso Pequim): ECO FDS ATIVO = economia o dia todo; bj_dow via days_from_civil+bump; vigência 2026-08-23 00:00 Pequim; próximo-pico dinâmico (p_ini[0]); hook DEEPECO_NOW; tabela 100% ASCII</td></tr>
+<tr><td>03-deepclaude/payload/deepeco.ps1</td><td>Espelho estrutural idêntico (PowerShell 5.1+7); BOM UTF-8 preservado</td></tr>
+<tr><td>03-deepclaude/payload/deepeco.conf</td><td>+ECO_FDS_ECO_DIA_INTEIRO=1 e ECO_FDS_VIGENCIA=2026-08-23 + docs do regime novo</td></tr>
+<tr><td>03-deepclaude/payload/eco.md</td><td>Slash command entende fim de semana (informa primeiro pico da próxima semana)</td></tr>
+<tr><td>README.md (raiz)</td><td>§Stop 7: tabela com banda Weekend, vigência, chaves novas, DEEPECO_NOW, ressalva de corroboração</td></tr>
+<tr><td>03-deepclaude/README.md</td><td>§The pricing window: mesma atualização (versão curta)</td></tr>
+<tr><td>03-deepclaude/tests/deepeco_fds_test.sh (novo)</td><td>Suíte autocontida 14 casos — critério objetivo de regressão futura</td></tr>
+</table>
 
       <h2 class="h4 pane-title mt-4">Commits (squash)</h2>
       <p>Histórico final do branch principal: um commit squash por sub-agente. Nenhuma worktree ou branch <code>wt/*</code> sobra ao final.</p>
 
-<h3>Commits (squash, um por sub-tarefa)</h3>
 <ul>
-<li><code>65a048d</code> onda1-docs-repo: docs — remove surf-skill, adiciona deep-orchestrator (README raiz, 04, 03)</li>
-<li><code>72f174b</code> onda1-instalador-04: instalador 04 — remove surf-skill, adiciona deep-orchestrator (install+config Brave) e GitCraque sem Node</li>
-<li><code>d6397ee</code> onda2-fix-docs-04: mensagem GitCraque precisa + wording ponte Windows (junction)</li>
-<li><code>bc0397a</code> onda2-fix-banner: remove resíduo surf-free-skill do banner do launcher</li>
+<li><code>5269197</code> — onda2-deepeco-fds: regra de fim de semana (fuso Pequim) no deepeco — economia dia todo em sáb/dom pós-vigência, DEEPECO_NOW, docs e ressalvas</li>
+<li><code>d9538ae</code> — onda2-fix-tabela: tabela 100% ASCII (alinhamento em qualquer locale) + próximo pico do fds derivado de ECO_PICOS_UTC</li>
+<li><code>285f57e</code> — test-onda2-deepeco-fds: suíte de cenários DEEPECO_NOW do deepeco (14 casos)</li>
 </ul>
     </div>
 
@@ -351,43 +342,27 @@
       <h2 class="h4 pane-title">De-Para: o que mudou</h2>
       <p>Comparação lado a lado entre o estado inicial do repositório e o estado final após a execução.</p>
 
-<h3>De-para</h3>
-<table class="table table-sm"><thead><tr><th>Antes</th><th>Depois</th></tr></thead><tbody>
-<tr><td>04-agent-tools instala <code>surf-skill</code> via npm (Tier 1 de pesquisa do agente) + GitCraque</td><td>04-agent-tools instala <b>GitCraque</b> + a skill <b>deep-orchestrator</b> (orquestrador autônomo multi-agente) — Node virou opcional (GitCraque >= 22.13)</td></tr>
-<tr><td>Ponte manual das 3 skills surf-* para ~/.claude-deepseek/skills</td><td>Skill deep-orchestrator ponteada (symlink/junction/cópia) para ~/.claude/skills E ~/.claude-deepseek/skills; resíduos surf-* da ponte antiga removidos só se symlink</td></tr>
-<tr><td>Wizard de chaves do surf (Tavily/Parallel/Brave/OpenRouter)</td><td>Wizard da chave <b>Brave Search API</b> (validação HTTP 200 ao vivo) → ~/.config/aula-dev/brave.key (600) + bloco rc <code>BRAVE_API_KEY</code> idempotente que preserva export prévio</td></tr>
-<tr><td>README raiz: "Stop 4 — the agent stops guessing (surf-skill)"</td><td>"Stop 4 — the agent orchestrates itself (deep-orchestrator)": ondas, worktrees nomeadas, squash-merge com gate, MODO CONTIDO com qwe, busca 3-tier (Tier 2 Brave / Tier 3 DDG keyless)</td></tr>
-<tr><td>Banner do launcher anuncia <code>surf-free-skill</code></td><td>Linha removida (resíduo do produto)</td></tr>
-<tr><td>Instruções da aula: 3 instaladores, sem skill de agente</td><td>4 instaladores + fluxo com <code>/deep-orchestrator</code>; cópia do 04-agent-tools na pasta da aula</td></tr>
-</tbody></table>
+<table>
+<tr><th>Aspecto</th><th>Antes</th><th>Depois</th></tr>
+<tr><td>Fim de semana</td><td>Tratado como dia útil — picos valiam sáb/dom</td><td>Sáb/dom do fuso de Pequim (pós 2026-08-23 00:00 Pequim): economia o DIA TODO; pré-vigência mantém regra antiga</td></tr>
+<tr><td>Config</td><td>ECO_ATIVO + ECO_PICOS_UTC + preços</td><td>+ ECO_FDS_ECO_DIA_INTEIRO (default ON) + ECO_FDS_VIGENCIA</td></tr>
+<tr><td>Teste/preview</td><td>Sem hook (relógio real)</td><td>DEEPECO_NOW="YYYY-MM-DD HH:MM" (UTC) substitui o relógio</td></tr>
+<tr><td>Próximo pico no fds</td><td>n/a (não existia o conceito)</td><td>Derivado de ECO_PICOS_UTC (1ª janela da 2ª-feira de Pequim) com rótulo Pequim/UTC/local</td></tr>
+<tr><td>Tabela do deepeco</td><td>Alinhamento dependente de locale (bug multibyte 3 bytes)</td><td>100% ASCII — alinha em qualquer locale (C, pt_BR.UTF-8)</td></tr>
+<tr><td>Docs</td><td>Regime antigo sem caveats</td><td>Vigência, ressalva de corroboração (fonte primária) e caveat início-vs-conclusão explícitos</td></tr>
+</table>
 
       <h2 class="h4 pane-title">Impacto</h2>
-      <p>O que cada mudança significa para quem usa o deep-orchestrator:</p>
-      <!-- IMPACT begin (não preenchido — conteúdo demo do template) -->
-      <div class="list-group list-group-flush mb-4">
-        <div class="list-group-item d-flex gap-3 align-items-start">
-          <i class="bi bi-stars fs-5 stat-value flex-shrink-0 mt-1"></i>
-          <div><strong>Impacto 1</strong> — descrição genérica, substituída na geração.</div>
-        </div>
-        <div class="list-group-item d-flex gap-3 align-items-start">
-          <i class="bi bi-stars fs-5 stat-value flex-shrink-0 mt-1"></i>
-          <div><strong>Impacto 2</strong> — descrição genérica, substituída na geração.</div>
-        </div>
-        <div class="list-group-item d-flex gap-3 align-items-start">
-          <i class="bi bi-stars fs-5 stat-value flex-shrink-0 mt-1"></i>
-          <div><strong>Impacto 3</strong> — descrição genérica, substituída na geração.</div>
-        </div>
-      </div>
-      <p class="text-body-secondary small">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pelos impactos reais.</p>
-      <!-- IMPACT end (não preenchido — conteúdo demo do template) -->
+      <p>O que cada mudança significa para quem usa o deep-orchestrator-agent-skill:</p>
+<p>Usuários do <code>deepeco</code> e de sessões <code>deepclaude</code> (o banner roda <code>deepeco --short</code> no launch) passam a ser informados corretamente desde 2026-08-23 00:00 Pequim: fins de semana a API DeepSeek cobra tarifa de economia o dia todo, e o tool não mostra mais "pico" nesses dias — evitando adiar trabalho à toa ou planejar por horário errado. Conf antigo (instalado antes da mudança) herda a regra nova por default; quem quiser o comportamento antigo desliga com ECO_FDS_ECO_DIA_INTEIRO="0". O hook DEEPECO_NOW permite "ver como estará amanhã" e alimenta a suíte de testes.</p>
 
       <h2 class="h4 pane-title">Novas capacidades</h2>
-<h3>O que a aula ganha</h3>
 <ul>
-<li><code>/deep-orchestrator &lt;tarefa&gt;</code> — orquestração autônoma multi-agente (ondas, worktrees nomeadas, sub-agentes, revisão adversarial, squash-merge com gate, commit sem perguntar)</li>
-<li>MODO CONTIDO: invocação dentro de worktree <code>qwe</code> integra no branch da worktree, nunca em main/master</li>
-<li>Busca: Tier 2 Brave (chave opcional do wizard) ou Tier 3 DuckDuckGo keyless — degradação funcional, sem hard blocker</li>
-<li>GitCraque mantido (leitura do histórico em grafo, sem Electron)</li>
+<li>Regra de fim de semana por fuso de PEQUIM (UTC+8 fixo, sem DST): dia da semana derivado de days_from_civil + bump das 16h UTC</li>
+<li>Vigência configurável (ECO_FDS_VIGENCIA): pré-vigência = regra antiga, pós = economia no fds</li>
+<li>Status e tabela corretos em qualquer fuso local (relógio UTC do servidor → conversão automática)</li>
+<li>Próximo pico no fds derivado das janelas configuradas (não hardcoded)</li>
+<li>DEEPECO_NOW (UTC) para teste/preview sem faketime; suíte de 14 casos de regressão</li>
 </ul>
     </div>
 
@@ -397,15 +372,12 @@
       <h2 class="h4 pane-title">Premissas inferidas sem perguntar</h2>
       <p>O orquestrador opera em autonomia total — nenhuma pergunta é feita ao usuário. Toda premissa assumida fica registrada aqui — para revisão e reprodutibilidade.</p>
 
-<h3>Decisões tomadas autonomamente</h3>
 <ul>
-<li><b>Fronteira:</b> a pasta da aula (/home/ondokai/Documents/Aulas/aula-001-multi-work/) é alvo explícito da tarefa — exceção autorizada à contenção, apenas nos paths listados.</li>
-<li><b>Node opcional no 04:</b> docs e instalador estavam contraditórios (docs prometiam "instala sem Node"; instalador abortava). Resolvido a favor das docs: Node ausente → GitCraque pulado com warning, skill instala mesmo assim.</li>
-<li><b>Gate de auditoria refinada:</b> "grep surf vazio" interpretado como referências ao PRODUTO (surf-skill|surf-*), não à substring "surf" — "surface"/"confirm-close-surface" do Ghostty são legítimos (fix de precisão na seção Ghostty do README raiz).</li>
-<li><b>"MIT" do deep-orchestrator:</b> mantido como declarado no README do próprio projeto ("Licença: MIT"); ausência de arquivo LICENSE no repo da skill é housekeeping upstream (SKILL_HOME somente leitura) — registrado, sem fix.</li>
-<li><b>Falso positivo do REPLAN rejeitado:</b> o diretório .deep-orchestrator/ no repo é o estado da própria execução (excluído por pathspec, removido no COMMIT-FINAL) — não foi apagado.</li>
-<li><b>Entrega da aula fora do git:</b> a pasta da aula não é repositório; a sub-tarefa onda2-docs-aula não produz squash no repo — merge no-op tratado e documentado.</li>
-<li><b>Fix do banner:</b> resíduo surf-free-skill no launcher foi corrigido mesmo com o REPLAN o tendo racionalizado como "produto diferente" (é skill do pacote npm surf-skill removido).</li>
+<li><b>Fonte de verdade:</b> email da "DeepSeek Team" CONFIRMADO na página oficial de preços EN e ZH (citação literal). Sem fontes terceiras para a cláusula de fim de semana (muito recente) — ressalva explícita nas docs e no relatório.</li>
+<li><b>Default ON:</b> o script aplica a regra nova por default mesmo com conf antigo sem chaves ECO_FDS_*; opt-out explícito via conf.</li>
+<li><b>Contrato da tabela:</b> células 100% ASCII mantido — o rótulo multibyte quebrava o alinhamento por bytes × chars; a mensagem "não vale hoje" vive na linha de status, não na tabela.</li>
+<li><b>Dia de Pequim via cálculo, não data GNU-only:</b> days_from_civil (Hinnant) portável GNU/BSD/Git Bash; vigência convertida para minutos UTC absolutos (âncora 29790240).</li>
+<li><b>pwsh ausente no host:</b> .ps1 validado por espelho estrutural + BOM + revisão adversarial; execução runtime delegada (débito documentado).</li>
 </ul>
     </div>
 
@@ -415,45 +387,20 @@
       <h2 class="h4 pane-title">Linha do tempo da execução</h2>
       <p>As quatro fases do orquestrador e o que aconteceu em cada uma.</p>
 
-      <!-- TIMELINE begin (não preenchido — conteúdo demo do template) -->
-      <ol class="timeline list-unstyled mb-0">
-        <li class="timeline-item mb-4">
-          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-            <span class="badge badge-accent">Fase 1</span>
-            <strong>ANALYZE</strong>
-          </div>
-          <p class="mb-0 text-body-secondary small">Leitura do prompt, mapeamento do repositório, classificação greenfield/brownfield.</p>
-        </li>
-        <li class="timeline-item mb-4">
-          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-            <span class="badge badge-accent">Fase 2</span>
-            <strong>PLAN</strong>
-          </div>
-          <p class="mb-0 text-body-secondary small">Decomposição em sub-tarefas atômicas, ondas topológicas, mapa de propriedade de arquivos, TASK_PLAN.md publicado.</p>
-        </li>
-        <li class="timeline-item mb-4">
-          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-            <span class="badge badge-accent">Fase 3</span>
-            <strong>EXECUTE-ONDA</strong>
-          </div>
-          <p class="mb-0 text-body-secondary small">Onda 1 — scripts + prompts · Onda 2 — templates/ + SKILL.md. Worktrees nomeadas, barreira, revisão adversarial, squash-merge com gate, limpeza.</p>
-        </li>
-        <li class="timeline-item">
-          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-            <span class="badge badge-ok">Fase 4</span>
-            <strong>COMMIT-FINAL</strong>
-          </div>
-          <p class="mb-0 text-body-secondary small">TASK_PLAN.md removido, gate completo, commit final, varredura de limpeza, EXPLAINER.html gerado (este documento).</p>
-        </li>
-      </ol>
-      <p class="text-body-secondary small mt-3">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pela timeline real da execução.</p>
-      <!-- TIMELINE end (não preenchido — conteúdo demo do template) -->
+<ul>
+<li>2026-08-22 11:39 — FASE 0 (fronteira) · análise do email e do código (deepeco)</li>
+<li>12:00 — Onda 1: pesquisa web (fontes oficiais EN/ZH via curl + Tier 3 DDG)</li>
+<li>Onda 2: implementação (6 arquivos) → revisão adversarial (WARNING) → fixes (BOM, LC_ALL=C, rótulos) → merge 5269197 + gate 16/16</li>
+<li>Revisor do diff integrado + suíte de testes detectam bug de exibição (tabela multibyte) → fix onda2-fix-tabela (ASCII + próximo-pico dinâmico) → merge d9538ae + gate 17/17</li>
+<li>Suíte de testes mergeada (285f57e) → 14/14 verdes · validação PASS</li>
+<li>COMMIT-FINAL: gate final verde · EXPLAINER.html · relatório</li>
+</ul>
     </div>
 
   </div>
 
   <footer class="text-body-secondary small border-top mt-5 pt-3">
-    Gerado por <strong>deep-orchestrator</strong> v1.0.0 · 2026-08-18 · branch main.
+    Gerado por <strong>deep-orchestrator-agent-skill</strong> vv3.4.1 · 2026-08-22 · branch main.
     Documento de arquivo único — salve, abra com duplo clique ou imprima em PDF (todas as abas entram no papel).
   </footer>
 
