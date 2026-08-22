@@ -99,10 +99,23 @@ The old off-peak discount (16:30–00:30 UTC, 50% chat / 75% reasoner) **ended o
 2025-09-05**. Since **2026-08-16 16:00 UTC** a peak/off-peak regime applies, defined in UTC
 by the **API server's** clock. `deepeco` converts it to your local timezone automatically.
 
+**Weekend rule (effective 2026-08-23 00:00 Beijing = 2026-08-22 16:00 UTC):** on Saturdays and
+Sundays in the **Beijing timezone (UTC+8, no DST)** the whole day is billed at the off-peak
+rate — the peaks do not apply. Weekdays (Mon–Fri, Beijing) keep the schedule below, and work
+billed before the effective date still follows the old rule (e.g. Saturday 2026-08-22 has
+peaks). Sources: [official pricing (EN)](https://api-docs.deepseek.com/quick_start/pricing/)
+and [定价 (ZH)](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/).
+
+**Weekend rule caveat.** As of 2026-08-22 this weekend clause (all-day off-peak on Beijing
+Saturdays/Sundays from 2026-08-23 00:00 Beijing) is confirmed *only* by the official pricing
+page above (EN/ZH) — no independent source we found covers it yet. The **weekday peak
+windows themselves** are corroborated by several independent trackers.
+
 | Band | UTC | Brazil (UTC−3) | Price |
 |---|---|---|---|
-| **Peak** | 01:00–04:00 and 06:00–10:00 | 22:00–01:00 and 03:00–07:00 | 2× |
+| **Peak** *(Mon–Fri, Beijing)* | 01:00–04:00 and 06:00–10:00 | 22:00–01:00 and 03:00–07:00 | 2× |
 | **Off-peak** | the other 17 hours | 01:00–03:00 and 07:00–22:00 | half of peak, all models |
+| **Weekend** *(Sat–Sun, Beijing, from 2026-08-23)* | all day | all day | off-peak all day |
 
 Per 1M tokens (cache hit / cache miss / output):
 
@@ -123,7 +136,11 @@ time of a request is what counts. In the 2025 policy it was completion. Near a b
 leave margin on long tasks.
 
 The window, the tariffs and the effective date live in `~/.config/aula-dev/deepeco.conf` —
-when DeepSeek changes the policy you edit that file, not the scripts.
+when DeepSeek changes the policy you edit that file, not the scripts. The weekend rule is
+governed by `ECO_FDS_ECO_DIA_INTEIRO` (`"1"` = Sat+Sun, Beijing, are off-peak all day; `"0"`
+= old behavior with peaks every day) and `ECO_FDS_VIGENCIA` (the Beijing date it takes
+effect, `2026-08-23`). For previews and tests, `deepeco` also honours
+`DEEPECO_NOW="YYYY-MM-DD HH:MM"` (UTC) to simulate the clock without faketime.
 
 ## What it puts on your machine
 

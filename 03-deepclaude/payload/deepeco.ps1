@@ -7,6 +7,11 @@
 # Regime (vigente desde 16/08/2026): horários de PICO custam 2x e todo o
 # resto do dia (17h) é economia (metade do pico). Picos definidos em UTC
 # (relógio do SERVIDOR); conversão para o fuso local é automática.
+# Regra nova de fim de semana (desde 2026-08-23 00:00 Pequim = 2026-08-22
+# 16:00 UTC): no sábado e no domingo do fuso de PEQUIM (UTC+8) o dia inteiro
+# é economia — picos NÃO valem. Dias úteis (seg a sex, Pequim) seguem o
+# regime acima. Default: ON (1) — um conf antigo sem as chaves ECO_FDS_*
+# aplica a regra nova; desligue com ECO_FDS_ECO_DIA_INTEIRO="0".
 # Valores em ~/.config/aula-dev/deepeco.conf (compartilhado com o .sh).
 $ErrorActionPreference = 'Stop'
 
@@ -29,6 +34,8 @@ $conf = @{
     ECO_PRECO_FLASH_PICO     = '$0.014 / $0.44 / $1.32'
     ECO_PRECO_PRO_PICO       = '$0.044 / $1.32 / $3.96'
     ECO_FONTE          = 'https://api-docs.deepseek.com/quick_start/pricing/'
+    ECO_FDS_ECO_DIA_INTEIRO = '1'          # default ON: 1 = fim de semana é economia o dia todo (0 desliga)
+    ECO_FDS_VIGENCIA  = '2026-08-23'       # data de PEQUIM (AAAA-MM-DD) em que vale (default, se conf não trouxer)
 }
 $confPath = if ($env:DEEPECO_CONF) { $env:DEEPECO_CONF } else { Join-Path $HOME '.config/aula-dev/deepeco.conf' }
 if (Test-Path $confPath) {
@@ -52,12 +59,61 @@ function ToMin([string]$hhmm) { $p = $hhmm.Split(':'); [int]$p[0] * 60 + [int]$p
 function ToHHMM([int]$min)    { '{0:d2}:{1:d2}' -f [int][math]::Floor($min / 60), ($min % 60) }
 function Dur([int]$m) { if ($m -ge 60) { '{0}h{1:d2}' -f [int][math]::Floor($m/60), ($m%60) } else { "$m min" } }
 
-$nowUtcDt = [DateTime]::UtcNow
-$now      = $nowUtcDt.Hour * 60 + $nowUtcDt.Minute
-$offMin   = [int][TimeZoneInfo]::Local.GetUtcOffset($nowUtcDt).TotalMinutes
+# dias desde a época (1970-01-01) a partir de data civil — algoritmo de
+# Howard Hinnant (date_algorithms.html), espelho do deepeco.sh. Usa
+# [long] (evita overflow do Int32) e floor com números positivos-ok aqui.
+# days_from_civil(2026,8,23) = 20688.
+function DaysFromCivil([int]$y, [int]$m, [int]$d) {
+    $yr = $y
+    if ($m -le 2) { $yr = $y - 1 }
+    $era = [math]::Floor($yr / 400.0)
+    $yoe = $yr - $era * 400                          # [0, 399]
+    $mm  = if ($m -gt 2) { $m - 3 } else { $m + 9 }
+    $doy = [int][math]::Floor((153 * $mm + 2) / 5) + $d - 1   # [0, 365]
+    $doe = $yoe * 365 + [int][math]::Floor($yoe / 4) - [int][math]::Floor($yoe / 100) + $doy
+    return [long]($era * 146097 + $doe - 719468)
+}
+
+# Relógio (uma leitura só): DEEPECO_NOW="YYYY-MM-DD HH:MM" (UTC) substitui o
+# relógio — hook de teste e preview (ver `deepeco --help`).
+$nowAbs = 0L
+if ($env:DEEPECO_NOW) {
+    $parts = $env:DEEPECO_NOW.Trim() -split '\s+'
+    $dparts = $parts[0].Split('-'); $hparts = $parts[1].Split(':')
+    $ny = [int]$dparts[0]; $nm = [int]$dparts[1]; $nd = [int]$dparts[2]
+    $nh = [int]$hparts[0]; $nmi = [int]$hparts[1]
+    $nowAbs = (DaysFromCivil $ny $nm $nd) * 1440 + ($nh * 60 + $nmi)
+    $now = $nh * 60 + $nmi
+    $nowDayAbs = [long](DaysFromCivil $ny $nm $nd)
+} else {
+    $nowUtcDt = [DateTime]::UtcNow
+    $now      = $nowUtcDt.Hour * 60 + $nowUtcDt.Minute
+    $nowDayAbs = [long](DaysFromCivil $nowUtcDt.Year $nowUtcDt.Month $nowUtcDt.Day)
+    $nowAbs = $nowDayAbs * 1440 + $now
+}
+$offMin   = [int][TimeZoneInfo]::Local.GetUtcOffset([DateTime]::UtcNow).TotalMinutes
 $tzLabel  = 'UTC{0}{1}' -f ($(if ($offMin -ge 0) { '+' } else { '' })), [int][math]::Truncate($offMin / 60)
 if ($offMin % 60 -ne 0) { $tzLabel += ':{0:d2}' -f [int][math]::Abs($offMin % 60) }
 function ToLocal([int]$minUtc) { ToHHMM ((($minUtc + $offMin) % 1440 + 1440) % 1440) }
+
+# ── fuso de Pequim (UTC+8 fixo, sem DST) e dia da semana ────────────────────
+# bjDow: 1=seg .. 7=dom. dowUtc (0=dom .. 6=sáb, escala Hinnant) vem do dia
+# civil absoluto; bump soma o "dia seguinte de Pequim" quando UTC já passou
+# de 16h (Pequim = UTC+8).
+$utcHour = [int][math]::Floor($now / 60)
+$bump = [math]::Floor(($utcHour + 8) / 24)                        # 0 antes das 16h UTC, 1 depois
+$dowUtc = ( ($nowDayAbs % 7) + 4 ) % 7                            # 0=dom .. 6=sáb
+$bjDow  = ( ( ( $dowUtc - 1 + $bump ) % 7 + 7 ) % 7 ) + 1         # 1=seg .. 7=dom
+$bjDayAbs = $nowDayAbs + $bump                                    # dia de Pequim absoluto
+
+# ── vigência da regra de fim de semana (ECO_FDS_VIGENCIA "AAAA-MM-DD", Pequim) ─
+# vigUtcMin = days_from_civil(y,m,d)*1440 − 480 (00:00 Pequim = 16:00 UTC do dia anterior).
+# Âncora: ECO_FDS_VIGENCIA="2026-08-23" → vigUtcMin = 29790240.
+$vigUtcMin = 0L
+if ($conf.ECO_FDS_VIGENCIA) {
+    $vp = ($conf.ECO_FDS_VIGENCIA.Trim() -split '-')
+    $vigUtcMin = (DaysFromCivil [int]$vp[0] [int]$vp[1] [int]$vp[2]) * 1440 - 480
+}
 
 # ── picos (e os segmentos de economia entre eles) ────────────────────────────
 $emPico = $false; $fimPico = 0
@@ -83,11 +139,27 @@ for ($k = 0; $k -lt $pIni.Count; $k++) {
 $picosLocStr = $picosLoc -join ' e '
 $ecoLocStr   = $ecoLoc   -join ' e '
 
+# ── fim de semana (regra nova): ECONOMIA o DIA TODO; picos não valem ────────
+# Ativo = ECO_FDS_ECO_DIA_INTEIRO=1 E nowAbs >= vigUtcMin E bjDow ∈ {6,7}.
+# "Próximo pico" nesse caso = primeiro pico da próxima segunda de Pequim
+# (01:00 UTC dessa segunda = 09:00 Pequim). Âncoras: sáb 2026-08-29 07:00Z →
+# 42h; dom 2026-08-30 07:00Z → 18h.
+$fdsAtivo = $false
+if ($conf.ECO_FDS_ECO_DIA_INTEIRO -eq '1' -and $nowAbs -ge $vigUtcMin -and ($bjDow -eq 6 -or $bjDow -eq 7)) {
+    $fdsAtivo = $true
+    $emPico = $false
+    $diasAteSeg = (8 - $bjDow) % 7                       # sáb=2, dom=1
+    $proxPicoIni = 60                                    # 01:00 UTC da segunda
+    $proxPicoDelta = [int](($bjDayAbs + $diasAteSeg) * 1440 + 60 - $nowAbs)
+}
+
 # ── tabela de horários e valores (células ASCII: PadRight alinha por char) ──
 function Show-Tabela {
     $mEco = '  '; $mPico = '  '
     if ($emPico) { $mPico = '> ' } else { $mEco = '> ' }
-    $c1 = @('faixa', "${mEco}economia", "${mPico}pico (2x)")
+    $r2lbl = "${mPico}pico (2x)"
+    if ($fdsAtivo) { $r2lbl = "${mPico}pico (não vale hoje — fim de semana)" }
+    $c1 = @('faixa', "${mEco}economia", $r2lbl)
     $c2 = @("horario ($tzLabel)", $ecoLocStr, $picosLocStr)
     $c3 = @('v4-flash (hit/miss/out)', $conf.ECO_PRECO_FLASH_ECONOMIA, $conf.ECO_PRECO_FLASH_PICO)
     $c4 = @('v4-pro (hit/miss/out)',   $conf.ECO_PRECO_PRO_ECONOMIA,   $conf.ECO_PRECO_PRO_PICO)
@@ -104,7 +176,9 @@ function Show-Tabela {
 }
 
 function Show-StatusCurto {
-    if ($emPico) {
+    if ($fdsAtivo) {
+        Write-Host "[eco] deepeco: ECONOMIA o DIA TODO (fim de semana — fuso de Pequim); primeiro pico da próxima semana: segunda 09:00 Pequim (= 01:00 UTC = $(ToLocal 60) $tzLabel)"
+    } elseif ($emPico) {
         Write-Host "[pico] deepeco: HORÁRIO DE PICO (preço 2x) — a economia volta às $(ToLocal $fimPico) $tzLabel (daqui a $(Dur $ateEconomia))"
     } else {
         Write-Host "[eco] deepeco: ECONOMIA ATIVA (metade do preço de pico) — próximo pico às $(ToLocal $proxPicoIni) $tzLabel (daqui a $(Dur $proxPicoDelta))"
@@ -129,12 +203,19 @@ Regime (desde 16/08/2026 16:00 UTC): os picos custam 2x e todo o resto do dia
 são definidas em UTC pelo relógio do SERVIDOR da API; este comando converte
 para o SEU fuso automaticamente.
 
+Regra de fim de semana (desde 2026-08-23 00:00 de Pequim = 2026-08-22 16:00
+UTC): no sábado e no domingo do fuso de PEQUIM (UTC+8) o dia inteiro é
+economia — os picos NÃO valem. Dias úteis (seg a sex, Pequim) seguem o regime
+acima. Desligue com ECO_FDS_ECO_DIA_INTEIRO="0" no conf.
+
 Janela, tarifas e vigência vivem em:
   $confPath
 Quando a DeepSeek mudar a política, edite esse arquivo — não este script.
 
 Ambiente:
   DEEPECO_CONF        caminho do conf (default: ~\.config\aula-dev\deepeco.conf)
+  DEEPECO_NOW="YYYY-MM-DD HH:MM"  simula o relógio nesse instante (UTC) — teste
+                          e preview (ex.: ver "como estará amanhã")
   MUNDO_DEV_BANNER=0  desliga o banner
 "@
     exit 0
