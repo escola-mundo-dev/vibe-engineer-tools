@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # ─────────────────────────────────────────────────────────────────────────────
-# comandos.sh — comandos da aula: `up`, `qwe`, `projects`
+# comandos.sh — comandos da aula: `up`, `qwe`, `projects`, `skills`
 # Instalado em: ~/.config/aula-dev/comandos.sh   (fonte: 01-commands/payload)
 # Carregado pelo ~/.zshrc e/ou ~/.bashrc via bloco "aula-dev".
 #
@@ -187,6 +187,169 @@ EOF
   d="$(PROJECTS_DIR="$dir" projects-picker)" || return $?
   cd -- "$d" || return 1
 }
+
+# ── skills ───────────────────────────────────────────────────────────────────
+# Seletor TUI (Ink/React) da SUA pasta de agent-skills — mais recente modificado
+# primeiro, filtro por digitação, ↑↓ navega. Enter abre a skill sob o cursor;
+# Esc/Ctrl+C cancelam sem cd. O picker imprime o caminho no stdout e esta função
+# faz o cd. O mesmo picker do `projects`, repassado via --root/--title.
+#
+#   skills            abre o seletor
+#   skills --setup    (re)configura QUAL pasta é a sua pasta de agent-skills
+#   skills --help     ajuda
+#
+# Ao contrário do `projects`, skills TEM um default — ~/Agent-Skills, a pasta de
+# agent-skills na raiz da home — por design, mas é reconfigurável com
+# `skills --setup` (grava skills.conf) e o override pontual $SKILLS_DIR fica
+# acima dele. A pasta é pergunta, não palpite: o default só diz onde os
+# agent-skills já moram; quem quiser outro lugar configura.
+#
+# Precedência: $SKILLS_DIR (override pontual) > skills.conf > ~/Agent-Skills.
+_skills_conf() { printf '%s\n' "${SKILLS_CONF:-$HOME/.config/aula-dev/skills.conf}"; }
+
+# Lê o valor SEM dar `source` (mesmo cuidado do projects.conf): o conf é config
+# do usuário, não script. `tr -d '\r'` cobre CRLF de um clone no Windows.
+_skills_conf_read() {
+  local conf
+  conf="$(_skills_conf)"
+  [ -r "$conf" ] || return 1
+  sed -n 's/^[[:space:]]*SKILLS_DIR[[:space:]]*=[[:space:]]*//p' "$conf" \
+    | tr -d '\r' | tail -n 1 | sed "s/^[\"']//; s/[\"']\$//"
+}
+
+_skills_default() { printf '%s\n' "$HOME/Agent-Skills"; }
+
+_skills_dir() {
+  local d
+  if [ -n "${SKILLS_DIR:-}" ]; then printf '%s\n' "$SKILLS_DIR"; return 0; fi
+  d="$(_skills_conf_read)" || return 1
+  [ -n "$d" ] || return 1
+  printf '%s\n' "$d"
+}
+
+# Setup interativo — usado pelo `skills --setup` (espelho do _projects_setup).
+_skills_setup() {
+  local conf dir tentativa
+  conf="$(_skills_conf)"
+
+  # Sem terminal (script, cron, agente), perguntar é impossível — falha curta.
+  if [ ! -t 0 ]; then
+    echo "skills: sem terminal para perguntar a pasta." >&2
+    echo "          Rode \`skills --setup\` num terminal, ou use SKILLS_DIR=/caminho." >&2
+    return 1
+  fi
+
+  cat >&2 <<'EOF'
+── Qual é a SUA pasta de agent-skills? ──
+
+Informe o CAMINHO ABSOLUTO da pasta onde VOCÊ guarda seus agent-skills.
+Ela não é criada por padrão e não é adivinhada: é escolha sua (a padrão é
+~/Agent-Skills; informe outra se guardar as suas noutro lugar).
+
+Como descobrir o caminho, se não souber de cabeça:
+  · abra outro terminal, entre na pasta (cd ...) e rode:  pwd
+  · ou arraste a pasta para dentro da janela do terminal — ele cola o caminho
+  · Git Bash no Windows: use a forma que o `pwd` mostra (/c/Users/voce/...),
+    não a forma C:\Users\voce\...
+
+Se errar agora, sem problema: rode `skills --setup` depois para reconfigurar.
+
+EOF
+
+  for tentativa in 1 2 3; do
+    printf 'Caminho absoluto da sua pasta de agent-skills: ' >&2
+    IFS= read -r dir || return 1
+
+    # Aspas/espaços do drag-and-drop e do autocomplete do terminal.
+    dir="${dir%\"}"; dir="${dir#\"}"
+    dir="${dir%\'}"; dir="${dir#\'}"
+    dir="${dir%/}"                       # barra final não muda a pasta
+    [ -z "$dir" ] && { echo "vazio — tente de novo" >&2; continue; }
+
+    # `~` e `~/x` não expandem quando vêm de um `read` — o til chega literal.
+    # shellcheck disable=SC2088  # é exatamente esse literal que queremos casar
+    case "$dir" in
+      "~")   dir="$HOME" ;;
+      "~/"*) dir="$HOME/${dir#\~/}" ;;
+    esac
+
+    case "$dir" in
+      [A-Za-z]:\\*|[A-Za-z]:/*)
+        echo "Isso é um caminho do Windows. No Git Bash use a forma do \`pwd\`: /c/Users/... " >&2
+        continue ;;
+      /*) : ;;
+      *)  echo "O caminho precisa ser ABSOLUTO (começar com /). Rode \`pwd\` dentro da pasta." >&2
+          echo "(tentativa $tentativa de 3)" >&2
+          continue ;;
+    esac
+
+    if [ ! -d "$dir" ]; then
+      printf 'A pasta %s não existe. Criar agora? [s/N]: ' "$dir" >&2
+      local resp; IFS= read -r resp || return 1
+      case "$resp" in
+        s|S|y|Y) mkdir -p "$dir" || { echo "não consegui criar $dir" >&2; continue; } ;;
+        *)       echo "ok, então informe outra pasta." >&2; continue ;;
+      esac
+    fi
+
+    # Grava o caminho FÍSICO (mesma normalização do `up` e do projects).
+    dir="$(cd "$dir" 2>/dev/null && pwd -P)" || { echo "não consegui entrar em $dir" >&2; continue; }
+
+    mkdir -p "$(dirname "$conf")" || return 1
+    {
+      printf '# skills.conf — a SUA pasta de agent-skills (lido por `skills`)\n'
+      printf '# Reconfigure a qualquer momento com: skills --setup\n'
+      printf 'SKILLS_DIR="%s"\n' "$dir"
+    } > "$conf" || return 1
+
+    echo "✅ pasta de agent-skills: $dir" >&2
+    echo "   gravado em $conf (mude com: skills --setup)" >&2
+    return 0
+  done
+
+  echo "skills: não consegui um caminho válido — nada foi gravado." >&2
+  echo "          Rode \`skills --setup\` quando quiser configurar." >&2
+  return 1
+}
+
+skills() {
+  case "${1:-}" in
+    --setup|-s)
+      _mundo_dev_banner
+      _skills_setup
+      return $? ;;
+    -h|--help)
+      cat >&2 <<'EOF'
+skills — seletor TUI das suas agent-skills
+
+  skills           abre o seletor (↑↓ navega · digite para filtrar ·
+                    Enter abre · Esc cancela)
+  skills --setup   (re)configura qual pasta é a sua pasta de agent-skills
+  skills --help    esta ajuda
+
+A pasta padrão é ~/Agent-Skills; quando reconfigurada, fica em
+~/.config/aula-dev/skills.conf.
+Override pontual, sem gravar nada:  SKILLS_DIR=/outro/caminho skills
+EOF
+      return 0 ;;
+  esac
+
+  _mundo_dev_banner
+  local dir d
+  if ! dir="$(_skills_dir)"; then
+    dir="$(_skills_default)"
+  fi
+  if [ ! -d "$dir" ]; then
+    echo "skills: a pasta de agent-skills não existe: $dir" >&2
+    echo "          Rode \`skills --setup\` para configurar (ou crie a pasta)." >&2
+    return 1
+  fi
+  d="$(projects-picker --root "$dir" --title "Escolha uma skill")" || return $?
+  cd -- "$d" || return 1
+}
+
+# s: atalho curto para o seletor de skills.
+s() { skills "$@"; }
 
 # up: sai da worktree e volta pro repo principal.
 #   Dentro de uma worktree (qwe/gwt)        → cd na raiz do repo PRINCIPAL.

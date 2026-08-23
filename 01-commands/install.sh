@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# install.sh — instalador dos comandos da aula: `up`, `qwe`, `projects`
+# install.sh — instalador dos comandos da aula: `up`, `qwe`, `projects`, `skills`
 #
 # O que faz (idempotente — pode rodar de novo sem medo):
 #   1. Garante Node.js ≥ 18 (instala se faltar: brew no macOS, nvm no Linux,
@@ -142,7 +142,7 @@ ok "Comando projects-picker publicado em $BIN_DIR"
 # não um palpite — criar um ~/Projects na home de quem instala é exatamente o
 # comportamento que este instalador evita.
 
-# ── comandos.sh (up / qwe / projects) ────────────────────────────────────────
+# ── comandos.sh (up / qwe / projects / skills) ───────────────────────────────
 info "Instalando comandos em $CONF_DIR/comandos.sh…"
 mkdir -p "$CONF_DIR"
 cp "$PAYLOAD/comandos.sh" "$CONF_DIR/comandos.sh"
@@ -197,14 +197,14 @@ else
 fi
 rmdir "$_smoke_dir" 2>/dev/null || true
 # 2. comandos.sh carrega limpo em bash (sintaxe portátil).
-if bash -c ". '$CONF_DIR/comandos.sh' && type qwe >/dev/null && type up >/dev/null && type projects >/dev/null"; then
-  ok "comandos.sh carrega em bash (up/qwe/projects definidos)"
+if bash -c ". '$CONF_DIR/comandos.sh' && type qwe >/dev/null && type up >/dev/null && type projects >/dev/null && type skills >/dev/null && type s >/dev/null"; then
+  ok "comandos.sh carrega em bash (up/qwe/projects/skills definidos)"
 else
   fail "comandos.sh não carregou em bash"
 fi
 # 3. E em zsh, se existir.
 if command -v zsh >/dev/null 2>&1; then
-  if zsh -c ". '$CONF_DIR/comandos.sh' && whence -w qwe >/dev/null"; then
+  if zsh -c ". '$CONF_DIR/comandos.sh' && whence -w qwe >/dev/null && whence -w skills >/dev/null"; then
     ok "comandos.sh carrega em zsh"
   else
     fail "comandos.sh não carregou em zsh"
@@ -240,6 +240,8 @@ echo
 echo "Próximo passo (1 min): abra um terminal NOVO (ou rode: source ~/.${login_shell:-bash}rc) e teste:"
 echo "  1. projects        → seletor TUI da SUA pasta de projetos"
 echo "                       (trocar a pasta: projects --setup)"
-echo "  2. cd <um repo git> && qwe teste-aula   → cria worktree e entra"
-echo "  3. up              → volta pro repo principal"
+echo "  2. skills          → seletor TUI da SUA pasta de agent-skills"
+echo "                       (padrão ~/Agent-Skills; troque com: skills --setup)"
+echo "  3. cd <um repo git> && qwe teste-aula   → cria worktree e entra"
+echo "  4. up              → volta pro repo principal"
 echo "Limpeza do teste: git worktree remove ../<repo>.worktrees/teste-aula && git branch -D teste-aula"

@@ -6,13 +6,8 @@ import { Box, Text, render, useInput } from "ink";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
-// A pasta de projetos e CONFIGURACAO do usuario, nunca um palpite: nao existe
-// fallback para ~/Projects (criar/listar pasta na home de quem instalou e o
-// bug que isso corrige). Precedencia: $PROJECTS_DIR > projects.conf.
-// O conf e lido por regex, nao por eval: e arquivo do usuario, nao script.
 function readConfDir() {
-  const conf = process.env.PROJECTS_CONF ||
-    path.join(process.env.HOME, ".config", "aula-dev", "projects.conf");
+  const conf = process.env.PROJECTS_CONF || path.join(process.env.HOME, ".config", "aula-dev", "projects.conf");
   let txt;
   try {
     txt = fs.readFileSync(conf, "utf8");
@@ -26,11 +21,38 @@ function readConfDir() {
   }
   return found || null;
 }
-var ROOT = process.env.PROJECTS_DIR || readConfDir();
+function parseArgv(argv) {
+  const out = { root: null, title: "Escolha um projeto", list: false };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "--list") {
+      out.list = true;
+    } else if (a === "--root") {
+      if (i + 1 >= argv.length) {
+        console.error("projects-picker: --root exige um caminho (--root <dir>)");
+        process.exit(2);
+      }
+      out.root = argv[++i];
+    } else if (a.startsWith("--root=")) {
+      out.root = a.slice("--root=".length);
+    } else if (a === "--title") {
+      if (i + 1 >= argv.length) {
+        console.error("projects-picker: --title exige um texto (--title <texto>)");
+        process.exit(2);
+      }
+      out.title = argv[++i];
+    } else if (a.startsWith("--title=")) {
+      out.title = a.slice("--title=".length);
+    }
+  }
+  if (out.root !== null && out.root.length === 0) out.root = null;
+  return out;
+}
+var opts = parseArgv(process.argv.slice(2));
+var ROOT = opts.root || process.env.PROJECTS_DIR || readConfDir();
 if (!ROOT) {
   console.error(
-    "projects-picker: nenhuma pasta de projetos configurada.\n" +
-    "  Rode:  projects --setup     (ou: PROJECTS_DIR=/caminho projects-picker)"
+    "projects-picker: nenhuma pasta de projetos configurada.\n  Rode:  projects --setup     (ou: PROJECTS_DIR=/caminho projects-picker)"
   );
   process.exit(2);
 }
@@ -74,10 +96,8 @@ function clamp(v, lo, hi) {
   return Math.min(Math.max(v, lo), hi);
 }
 var projects = listProjects(ROOT);
-var HOME_NAME = process.env.HOME && ROOT.startsWith(process.env.HOME + path.sep)
-  ? "~" + ROOT.slice(process.env.HOME.length)
-  : ROOT;
-if (process.argv.includes("--list")) {
+var HOME_NAME = process.env.HOME && ROOT.startsWith(process.env.HOME + path.sep) ? "~" + ROOT.slice(process.env.HOME.length) : ROOT;
+if (opts.list) {
   for (const p of projects) console.log(p.name);
   process.exit(0);
 }
@@ -121,7 +141,7 @@ function App() {
       setFilter((f) => f + input);
     }
   });
-  return /* @__PURE__ */ React.createElement(Box, { flexDirection: "column" }, /* @__PURE__ */ React.createElement(Text, { bold: true }, "Escolha um projeto \u2014 ", HOME_NAME, " (", projects.length, ")"), filter ? /* @__PURE__ */ React.createElement(Text, null, "filtro: ", /* @__PURE__ */ React.createElement(Text, { color: "cyan" }, filter), /* @__PURE__ */ React.createElement(Text, { dimColor: true }, " \xB7 ", filtered.length, "/", projects.length)) : /* @__PURE__ */ React.createElement(Text, { dimColor: true }, "mais recente primeiro"), /* @__PURE__ */ React.createElement(Box, { marginTop: 1, flexDirection: "column" }, visible.length === 0 ? /* @__PURE__ */ React.createElement(Text, { dimColor: true }, "nenhum projeto corresponde \u2014 Enter abre ", HOME_NAME) : visible.map((p, i) => {
+  return /* @__PURE__ */ React.createElement(Box, { flexDirection: "column" }, /* @__PURE__ */ React.createElement(Text, { bold: true }, opts.title, " \u2014 ", HOME_NAME, " (", projects.length, ")"), filter ? /* @__PURE__ */ React.createElement(Text, null, "filtro: ", /* @__PURE__ */ React.createElement(Text, { color: "cyan" }, filter), /* @__PURE__ */ React.createElement(Text, { dimColor: true }, " \xB7 ", filtered.length, "/", projects.length)) : /* @__PURE__ */ React.createElement(Text, { dimColor: true }, "mais recente primeiro"), /* @__PURE__ */ React.createElement(Box, { marginTop: 1, flexDirection: "column" }, visible.length === 0 ? /* @__PURE__ */ React.createElement(Text, { dimColor: true }, "nenhum projeto corresponde \u2014 Enter abre ", HOME_NAME) : visible.map((p, i) => {
     const selected = i === cursor - start;
     return /* @__PURE__ */ React.createElement(Text, { key: p.name, color: selected ? "green" : void 0, bold: selected }, selected ? "\u276F " : "  ", p.name, /* @__PURE__ */ React.createElement(Text, { dimColor: true }, "  (", relativeTime(p.mtimeMs), ")"));
   })), /* @__PURE__ */ React.createElement(Text, { dimColor: true, marginTop: 1 }, "\u2191\u2193 navegar \xB7 digitar = filtrar \xB7 \u232B apagar \xB7 Enter = abrir \xB7 Esc = cancelar"));
