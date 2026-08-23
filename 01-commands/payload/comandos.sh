@@ -222,7 +222,7 @@ _skills_default() { printf '%s\n' "$HOME/Agent-Skills"; }
 _skills_dir() {
   local d
   if [ -n "${SKILLS_DIR:-}" ]; then printf '%s\n' "$SKILLS_DIR"; return 0; fi
-  d="$(_skills_conf_read)" || return 1
+  d="$(_skills_conf_read)" || d="$(_skills_default)"
   [ -n "$d" ] || return 1
   printf '%s\n' "$d"
 }
