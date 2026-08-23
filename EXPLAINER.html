@@ -144,7 +144,7 @@
 <nav class="navbar navbar-expand-lg sticky-top bg-body-tertiary">
   <div class="container">
     <span class="navbar-brand fw-semibold"><i class="bi bi-diagram-3 brand-accent me-2"></i>deep-orchestrator-agent-skill <span class="text-body-secondary fw-normal">· EXPLAINER</span></span>
-    <span class="navbar-text small text-body-secondary d-none d-md-inline">vv3.4.1 · 2026-08-22</span>
+    <span class="navbar-text small text-body-secondary d-none d-md-inline">v1.1.0 · 2026-08-23</span>
   </div>
 </nav>
 
@@ -153,10 +153,10 @@
   <header class="explainer-hero rounded-4 p-4 p-md-5 mb-4">
     <span class="badge badge-accent mb-3"><i class="bi bi-clipboard-data me-1"></i>Relatório de execução</span>
     <h1 class="display-6 fw-semibold text-white mb-2">O que aconteceu nesta execução</h1>
-    <p class="lead text-white-50 mb-3">Análise do email DeepSeek (fim de semana = off-peak dia todo desde 2026-08-23 00:00 Pequim) + pesquisa web de confirmação + ajuste do peak-time do deepeco (bash/PS/conf/eco.md/docs) com suíte de testes</p>
+    <p class="lead text-white-50 mb-3">skills/s + projects fix: picker generico (--root/--title), comando skills/s sobre ~/Agent-Skills, src/index.jsx reproduzivel, docs e instalador</p>
     <div class="d-flex flex-wrap gap-2">
-      <span class="badge badge-accent">vv3.4.1</span>
-      <span class="badge badge-soft"><i class="bi bi-calendar3 me-1"></i>2026-08-22</span>
+      <span class="badge badge-accent">v1.1.0</span>
+      <span class="badge badge-soft"><i class="bi bi-calendar3 me-1"></i>2026-08-23</span>
       <span class="badge badge-soft"><i class="bi bi-git-branch me-1"></i>main</span>
     </div>
   </header>
@@ -213,7 +213,7 @@
     <div class="tab-pane fade show active" id="pane-visao" role="tabpanel"
          aria-labelledby="tab-visao" tabindex="0" data-print-title="Visão geral">
       <h2 class="h4 pane-title">Resumo da execução</h2>
-      <p class="text-body-secondary">Análise do email DeepSeek (fim de semana = off-peak dia todo desde 2026-08-23 00:00 Pequim) + pesquisa web de confirmação + ajuste do peak-time do deepeco (bash/PS/conf/eco.md/docs) com suíte de testes</p>
+      <p class="text-body-secondary">skills/s + projects fix: picker generico (--root/--title), comando skills/s sobre ~/Agent-Skills, src/index.jsx reproduzivel, docs e instalador</p>
 
       <div class="alert alert-primary d-flex gap-2" role="alert">
         <i class="bi bi-info-circle-fill flex-shrink-0"></i>
@@ -225,7 +225,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-layers fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">3</div>
+              <div class="display-6 fw-bold stat-value">1</div>
               <div class="text-body-secondary small">Ondas executadas</div>
             </div>
           </div>
@@ -234,7 +234,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-robot fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">10</div>
+              <div class="display-6 fw-bold stat-value">2</div>
               <div class="text-body-secondary small">Sub-agentes</div>
             </div>
           </div>
@@ -243,7 +243,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-git-commit fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">5</div>
+              <div class="display-6 fw-bold stat-value">2</div>
               <div class="text-body-secondary small">Commits (squash)</div>
             </div>
           </div>
@@ -254,7 +254,7 @@
       <p>O orquestrador, na fase COMMIT-FINAL, gera o explainer a partir deste template:</p>
 <pre><code class="language-bash"># Gera o explainer a partir do template
 ./scripts/generate-explainer.sh &gt; EXPLAINER.html
-# Ou preenche manualmente os placeholders v3.4.1, 2026-08-22, main, ...</code></pre>
+# Ou preenche manualmente os placeholders 1.1.0, 2026-08-23, main, ...</code></pre>
       <p class="text-body-secondary small">O template é <code>templates/html-explainer.html</code> — arquivo único, sem build: abre por file:// e imprime em PDF com todas as abas.</p>
 
       <details class="mt-4">
@@ -293,12 +293,11 @@
       <p>Uma linha por sub-agente. Cada sub-agente trabalha numa worktree Git nomeada; a integração é squash-merge um a um, com gate (build + testes) entre merges. Worktrees e branches <code>wt/*</code> são removidos ao fim de cada onda.</p>
 
 <table>
-<tr><th>Onda</th><th>Worktree</th><th>O que entregou</th><th>Resultado</th></tr>
-<tr><td>1 — Pesquisa</td><td>— (somente leitura)</td><td>Corroboração web multi-fonte da regra nova; ressalva documentada (cláusula de fim de semana confirmada só na fonte primária oficial EN/ZH)</td><td>Confirmada nas fontes oficiais; picos/fuso/16-08 corroborados por trackers independentes</td></tr>
-<tr><td>2 — Implementação</td><td>onda2-deepeco-fds</td><td>Regra de fim de semana no deepeco (bash+PS+conf+eco.md+2 READMEs): economia dia todo em sáb/dom de Pequim pós-vigência; default ON; hook DEEPECO_NOW; ressalvas nas docs</td><td>Squash 5269197 · gate 16/16</td></tr>
-<tr><td>2 — Fix (achados adversariais)</td><td>onda2-fix-tabela</td><td>Tabela 100% ASCII (alinhamento em qualquer locale); próximo-pico derivado de ECO_PICOS_UTC (sem hardcode); BOM do .ps1 preservado</td><td>Squash d9538ae · gate 17/17</td></tr>
-<tr><td>Subwave — Testes</td><td>test-onda2-deepeco-fds</td><td>Suíte autocontida de 15 casos (DEEPECO_NOW): regra fds, conf antigo, opt-out, alinhamento, BOM, janelas customizadas, SKIP real sem python3</td><td>Squash 285f57e+08f23df · 15/15 verdes (detectou o bug de alinhamento pré-fix; SKIP sem python3 = exit 0)</td></tr>
-<tr><td>Subwave — Validação</td><td>val-onda2-gate</td><td>Gate completo no estado integrado (build/lint/testes/BOM/alinhamento) + revisor do diff integrado</td><td>PASS em todas as etapas; revisor: WARNING → fix aplicado</td></tr>
+  <thead><tr><th>Onda</th><th>Sub-tarefa (worktree)</th><th>Entrega</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>onda1-skills-cmd</td><td>Comando skills/s + picker genérico (--root/--title) + src/index.jsx + docs + instalador</td><td>squash 77d8802 · gate verde</td></tr>
+    <tr><td>1-fix</td><td>onda1-fix-skills-dir</td><td>_skills_dir implementa o default ~/Agent-Skills previsto no contrato</td><td>squash aa5e047 · gate verde</td></tr>
+  </tbody>
 </table>
 
       <h3 class="h6 mt-4 text-body-secondary">Legenda de status</h3>
@@ -316,23 +315,22 @@
       <p>Diff stats da execução: <span class="diff-plus">+</span> linhas adicionadas, <span class="diff-minus">−</span> removidas.</p>
 
 <table>
-<tr><th>Arquivo</th><th>Mudança</th></tr>
-<tr><td>03-deepclaude/payload/deepeco</td><td>+Fim de semana (fuso Pequim): ECO FDS ATIVO = economia o dia todo; bj_dow via days_from_civil+bump; vigência 2026-08-23 00:00 Pequim; próximo-pico dinâmico (p_ini[0]); hook DEEPECO_NOW; tabela 100% ASCII</td></tr>
-<tr><td>03-deepclaude/payload/deepeco.ps1</td><td>Espelho estrutural idêntico (PowerShell 5.1+7); BOM UTF-8 preservado</td></tr>
-<tr><td>03-deepclaude/payload/deepeco.conf</td><td>+ECO_FDS_ECO_DIA_INTEIRO=1 e ECO_FDS_VIGENCIA=2026-08-23 + docs do regime novo</td></tr>
-<tr><td>03-deepclaude/payload/eco.md</td><td>Slash command entende fim de semana (informa primeiro pico da próxima semana)</td></tr>
-<tr><td>README.md (raiz)</td><td>§Stop 7: tabela com banda Weekend, vigência, chaves novas, DEEPECO_NOW, ressalva de corroboração</td></tr>
-<tr><td>03-deepclaude/README.md</td><td>§The pricing window: mesma atualização (versão curta)</td></tr>
-<tr><td>03-deepclaude/tests/deepeco_fds_test.sh (novo)</td><td>Suíte autocontida 14 casos — critério objetivo de regressão futura</td></tr>
+  <thead><tr><th>Arquivo</th><th>Antes</th><th>Depois</th></tr></thead>
+  <tbody>
+    <tr><td>01-commands/payload/projects-picker/src/index.jsx</td><td>inexistente (build do repo quebrado)</td><td>NOVO — fonte JSX legível do picker (build reproduzível)</td></tr>
+    <tr><td>01-commands/payload/projects-picker/dist/index.js</td><td>só PROJECTS_DIR/conf + --list</td><td>+ --root (vence env/conf) + --title (header parametrizável)</td></tr>
+    <tr><td>01-commands/payload/comandos.sh</td><td>up/qwe/projects</td><td>+ skills/s (precedência SKILLS_DIR &gt; skills.conf &gt; ~/Agent-Skills; --setup; --help)</td></tr>
+    <tr><td>01-commands/README.md</td><td>documentava só projects/qwe/up</td><td>+ skills/s, skills.conf, design notes do picker genérico</td></tr>
+    <tr><td>01-commands/install.sh</td><td>smoke tests sem skills</td><td>+ smoke type skills/s · mensagem final cita skills</td></tr>
+  </tbody>
 </table>
 
       <h2 class="h4 pane-title mt-4">Commits (squash)</h2>
       <p>Histórico final do branch principal: um commit squash por sub-agente. Nenhuma worktree ou branch <code>wt/*</code> sobra ao final.</p>
 
 <ul>
-<li><code>5269197</code> — onda2-deepeco-fds: regra de fim de semana (fuso Pequim) no deepeco — economia dia todo em sáb/dom pós-vigência, DEEPECO_NOW, docs e ressalvas</li>
-<li><code>d9538ae</code> — onda2-fix-tabela: tabela 100% ASCII (alinhamento em qualquer locale) + próximo pico do fds derivado de ECO_PICOS_UTC</li>
-<li><code>285f57e</code> — test-onda2-deepeco-fds: suíte de cenários DEEPECO_NOW do deepeco (14 casos)</li>
+  <li><code>77d8802</code> — onda1-skills-cmd: adiciona skills/s e generaliza projects-picker (--root/--title)</li>
+  <li><code>aa5e047</code> — onda1-fix-skills-dir: _skills_dir implementa o default ~/Agent-Skills (contrato da precedência)</li>
 </ul>
     </div>
 
@@ -342,28 +340,91 @@
       <h2 class="h4 pane-title">De-Para: o que mudou</h2>
       <p>Comparação lado a lado entre o estado inicial do repositório e o estado final após a execução.</p>
 
-<table>
-<tr><th>Aspecto</th><th>Antes</th><th>Depois</th></tr>
-<tr><td>Fim de semana</td><td>Tratado como dia útil — picos valiam sáb/dom</td><td>Sáb/dom do fuso de Pequim (pós 2026-08-23 00:00 Pequim): economia o DIA TODO; pré-vigência mantém regra antiga</td></tr>
-<tr><td>Config</td><td>ECO_ATIVO + ECO_PICOS_UTC + preços</td><td>+ ECO_FDS_ECO_DIA_INTEIRO (default ON) + ECO_FDS_VIGENCIA</td></tr>
-<tr><td>Teste/preview</td><td>Sem hook (relógio real)</td><td>DEEPECO_NOW="YYYY-MM-DD HH:MM" (UTC) substitui o relógio</td></tr>
-<tr><td>Próximo pico no fds</td><td>n/a (não existia o conceito)</td><td>Derivado de ECO_PICOS_UTC (1ª janela da 2ª-feira de Pequim) com rótulo Pequim/UTC/local</td></tr>
-<tr><td>Tabela do deepeco</td><td>Alinhamento dependente de locale (bug multibyte 3 bytes)</td><td>100% ASCII — alinha em qualquer locale (C, pt_BR.UTF-8)</td></tr>
-<tr><td>Docs</td><td>Regime antigo sem caveats</td><td>Vigência, ressalva de corroboração (fonte primária) e caveat início-vs-conclusão explícitos</td></tr>
-</table>
+      <!-- BEFORE_AFTER begin (não preenchido — conteúdo demo do template) -->
+      <!-- Cards Antes/Depois e seções de de-para adicionais geradas
+           dinamicamente entram aqui (substituídos na geração). -->
+      <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+          <div class="card h-100 depara-antes">
+            <div class="card-header"><i class="bi bi-arrow-left-circle me-1"></i><strong>Antes</strong></div>
+            <div class="card-body">
+              <p class="card-text text-body-secondary">Estado inicial — descrição genérica, substituída na geração.</p>
+              <ul class="list-unstyled mb-0 d-grid gap-2">
+                <li><i class="bi bi-file-earmark-text me-2 text-body-secondary"></i>Item representativo do estado inicial</li>
+                <li><i class="bi bi-file-earmark-text me-2 text-body-secondary"></i>Segundo item representativo</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card h-100 depara-depois">
+            <div class="card-header"><i class="bi bi-arrow-right-circle me-1"></i><strong>Depois</strong></div>
+            <div class="card-body">
+              <p class="card-text text-body-secondary">Estado final — descrição genérica, substituída na geração.</p>
+              <ul class="list-unstyled mb-0 d-grid gap-2">
+                <li><i class="bi bi-terminal me-2 text-body-secondary"></i>Item representativo do estado final</li>
+                <li><i class="bi bi-file-earmark-code me-2 text-body-secondary"></i>Segundo item representativo</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="text-body-secondary small">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pelos dados reais.</p>
+      <!-- BEFORE_AFTER end (não preenchido — conteúdo demo do template) -->
 
       <h2 class="h4 pane-title">Impacto</h2>
       <p>O que cada mudança significa para quem usa o deep-orchestrator-agent-skill:</p>
-<p>Usuários do <code>deepeco</code> e de sessões <code>deepclaude</code> (o banner roda <code>deepeco --short</code> no launch) passam a ser informados corretamente desde 2026-08-23 00:00 Pequim: fins de semana a API DeepSeek cobra tarifa de economia o dia todo, e o tool não mostra mais "pico" nesses dias — evitando adiar trabalho à toa ou planejar por horário errado. Conf antigo (instalado antes da mudança) herda a regra nova por default; quem quiser o comportamento antigo desliga com ECO_FDS_ECO_DIA_INTEIRO="0". O hook DEEPECO_NOW permite "ver como estará amanhã" e alimenta a suíte de testes.</p>
+      <!-- IMPACT begin (não preenchido — conteúdo demo do template) -->
+      <div class="list-group list-group-flush mb-4">
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-stars fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Impacto 1</strong> — descrição genérica, substituída na geração.</div>
+        </div>
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-stars fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Impacto 2</strong> — descrição genérica, substituída na geração.</div>
+        </div>
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-stars fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Impacto 3</strong> — descrição genérica, substituída na geração.</div>
+        </div>
+      </div>
+      <p class="text-body-secondary small">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pelos impactos reais.</p>
+      <!-- IMPACT end (não preenchido — conteúdo demo do template) -->
 
       <h2 class="h4 pane-title">Novas capacidades</h2>
-<ul>
-<li>Regra de fim de semana por fuso de PEQUIM (UTC+8 fixo, sem DST): dia da semana derivado de days_from_civil + bump das 16h UTC</li>
-<li>Vigência configurável (ECO_FDS_VIGENCIA): pré-vigência = regra antiga, pós = economia no fds</li>
-<li>Status e tabela corretos em qualquer fuso local (relógio UTC do servidor → conversão automática)</li>
-<li>Próximo pico no fds derivado das janelas configuradas (não hardcoded)</li>
-<li>DEEPECO_NOW (UTC) para teste/preview sem faketime; suíte de 15 casos de regressão (portátil: SKIP real sem python3)</li>
-</ul>
+      <!-- CAPABILITIES begin (não preenchido — conteúdo demo do template) -->
+      <div class="row g-3">
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <i class="bi bi-stars fs-3 stat-value"></i>
+              <h3 class="h6 mt-2 mb-1">Capacidade 1</h3>
+              <p class="small text-body-secondary mb-0">Descrição genérica, substituída na geração.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <i class="bi bi-stars fs-3 stat-value"></i>
+              <h3 class="h6 mt-2 mb-1">Capacidade 2</h3>
+              <p class="small text-body-secondary mb-0">Descrição genérica, substituída na geração.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <i class="bi bi-stars fs-3 stat-value"></i>
+              <h3 class="h6 mt-2 mb-1">Capacidade 3</h3>
+              <p class="small text-body-secondary mb-0">Descrição genérica, substituída na geração.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="text-body-secondary small">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pelas capacidades reais.</p>
+      <!-- CAPABILITIES end (não preenchido — conteúdo demo do template) -->
     </div>
 
     <!-- ══════════════ ABA 5 · DECISÕES AUTÔNOMAS ══════════════ -->
@@ -373,11 +434,11 @@
       <p>O orquestrador opera em autonomia total — nenhuma pergunta é feita ao usuário. Toda premissa assumida fica registrada aqui — para revisão e reprodutibilidade.</p>
 
 <ul>
-<li><b>Fonte de verdade:</b> email da "DeepSeek Team" CONFIRMADO na página oficial de preços EN e ZH (citação literal). Sem fontes terceiras para a cláusula de fim de semana (muito recente) — ressalva explícita nas docs e no relatório.</li>
-<li><b>Default ON:</b> o script aplica a regra nova por default mesmo com conf antigo sem chaves ECO_FDS_*; opt-out explícito via conf.</li>
-<li><b>Contrato da tabela:</b> células 100% ASCII mantido — o rótulo multibyte quebrava o alinhamento por bytes × chars; a mensagem "não vale hoje" vive na linha de status, não na tabela.</li>
-<li><b>Dia de Pequim via cálculo, não data GNU-only:</b> days_from_civil (Hinnant) portável GNU/BSD/Git Bash; vigência convertida para minutos UTC absolutos (âncora 29790240).</li>
-<li><b>pwsh ausente no host:</b> .ps1 validado por espelho estrutural + BOM + revisão adversarial; execução runtime delegada (débito documentado).</li>
+  <li><strong>Causa raiz do bug:</strong> a ponte <em>fish</em> (~/.config/fish/config.fish) rodava <code>(projects-picker 2>/dev/null)</code> — o TUI do picker renderiza no STDERR, então a interface ficava invisível no fish (verificado por PTY: fish mostrava nada; zsh funcionava). Correção no arquivo de config da máquina (fora do repo).</li>
+  <li><strong>Picker genérico:</strong> um único binário serve <code>projects</code> e <code>skills</code>; <code>--root</code> vence $PROJECTS_DIR e conf; sem flags, comportamento antigo 100% preservado (exit 2 sem configuração).</li>
+  <li><strong>skills tem default (única exceção do sistema):</strong> ~/Agent-Skills por pedido explícito; reconfigurável via --setup/SKILLS_DIR.</li>
+  <li><strong>src/index.jsx criado:</strong> o repo (e a instalação ~/.local/share) não tinham a fonte — só o dist. Agora o dist é regenerável e foi verificado byte-consistente no gate.</li>
+  <li><strong>subwaves:</strong> testing NO-OP (contrato = smoke do gate/install.sh) e validação dobrada no gate de snapshot + revisão adversarial pré-merge (F3-09 — 1 onda pequena).</li>
 </ul>
     </div>
 
@@ -387,20 +448,45 @@
       <h2 class="h4 pane-title">Linha do tempo da execução</h2>
       <p>As quatro fases do orquestrador e o que aconteceu em cada uma.</p>
 
-<ul>
-<li>2026-08-22 11:39 — FASE 0 (fronteira) · análise do email e do código (deepeco)</li>
-<li>12:00 — Onda 1: pesquisa web (fontes oficiais EN/ZH via curl + Tier 3 DDG)</li>
-<li>Onda 2: implementação (6 arquivos) → revisão adversarial (WARNING) → fixes (BOM, LC_ALL=C, rótulos) → merge 5269197 + gate 16/16</li>
-<li>Revisor do diff integrado + suíte de testes detectam bug de exibição (tabela multibyte) → fix onda2-fix-tabela (ASCII + próximo-pico dinâmico) → merge d9538ae + gate 17/17</li>
-<li>Suíte de testes mergeada (285f57e) → 14/14 verdes · validação PASS</li>
-<li>COMMIT-FINAL: gate final verde · EXPLAINER.html · relatório</li>
-</ul>
+      <!-- TIMELINE begin (não preenchido — conteúdo demo do template) -->
+      <ol class="timeline list-unstyled mb-0">
+        <li class="timeline-item mb-4">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="badge badge-accent">Fase 1</span>
+            <strong>ANALYZE</strong>
+          </div>
+          <p class="mb-0 text-body-secondary small">Leitura do prompt, mapeamento do repositório, classificação greenfield/brownfield.</p>
+        </li>
+        <li class="timeline-item mb-4">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="badge badge-accent">Fase 2</span>
+            <strong>PLAN</strong>
+          </div>
+          <p class="mb-0 text-body-secondary small">Decomposição em sub-tarefas atômicas, ondas topológicas, mapa de propriedade de arquivos, TASK_PLAN.md publicado.</p>
+        </li>
+        <li class="timeline-item mb-4">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="badge badge-accent">Fase 3</span>
+            <strong>EXECUTE-ONDA</strong>
+          </div>
+          <p class="mb-0 text-body-secondary small">Onda 1 — scripts + prompts · Onda 2 — templates/ + SKILL.md. Worktrees nomeadas, barreira, revisão adversarial, squash-merge com gate, limpeza.</p>
+        </li>
+        <li class="timeline-item">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="badge badge-ok">Fase 4</span>
+            <strong>COMMIT-FINAL</strong>
+          </div>
+          <p class="mb-0 text-body-secondary small">TASK_PLAN.md removido, gate completo, commit final, varredura de limpeza, EXPLAINER.html gerado (este documento).</p>
+        </li>
+      </ol>
+      <p class="text-body-secondary small mt-3">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pela timeline real da execução.</p>
+      <!-- TIMELINE end (não preenchido — conteúdo demo do template) -->
     </div>
 
   </div>
 
   <footer class="text-body-secondary small border-top mt-5 pt-3">
-    Gerado por <strong>deep-orchestrator-agent-skill</strong> vv3.4.1 · 2026-08-22 · branch main.
+    Gerado por <strong>deep-orchestrator-agent-skill</strong> v1.1.0 · 2026-08-23 · branch main.
     Documento de arquivo único — salve, abra com duplo clique ou imprima em PDF (todas as abas entram no papel).
   </footer>
 
